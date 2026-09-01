@@ -225,7 +225,6 @@ input::placeholder, textarea::placeholder { color: #94a3b8; }
 }
 
 .room-notes-btn {
-  order: 1;
   position: relative;
   flex: 0 0 auto;
   width: 38px;
@@ -243,15 +242,6 @@ input::placeholder, textarea::placeholder { color: #94a3b8; }
   border-radius: 50%;
   background: var(--color-accent);
   border: 2px solid var(--color-card);
-}
-
-.room-action-text {
-  order: 2;
-  flex: 1 1 150px;
-  min-width: 0;
-  min-height: 38px;
-  padding: 8px 12px;
-  font-size: 13px;
 }
 
 .checkbox-pill {
@@ -313,6 +303,10 @@ input::placeholder, textarea::placeholder { color: #94a3b8; }
 .store-row .store-custom { flex: 1 1 140px; }
 .store-row .store-items { flex: 2 1 200px; }
 
+.shopping-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.shopping-row .shopping-item { flex: 3 1 200px; }
+.shopping-row .shopping-qty { flex: 1 1 80px; }
+
 /* ---------- Assignee picker ---------- */
 
 .assignee-picker { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -350,7 +344,7 @@ input::placeholder, textarea::placeholder { color: #94a3b8; }
   background: none;
 }
 
-.add-store-btn { font-size: 13px; padding: 8px 14px; min-height: 36px; }
+.add-row-btn { font-size: 13px; padding: 8px 14px; min-height: 36px; }
 .resend-btn { font-size: 12px; font-weight: 700; padding: 6px 12px; min-height: 32px; gap: 6px; }
 
 /* ---------- Buttons ---------- */

@@ -4,6 +4,8 @@
   const errorBox = document.getElementById("form-error");
   const storeRowsWrap = document.getElementById("store-rows");
   const addStoreBtn = document.getElementById("add-store-row");
+  const shoppingRowsWrap = document.getElementById("shopping-rows");
+  const addShoppingBtn = document.getElementById("add-shopping-row");
 
   function makeStoreRow() {
     const template = storeRowsWrap.querySelector(".store-row");
@@ -30,38 +32,48 @@
     if (!custom.hidden) custom.focus();
   });
 
-  // "Spot clean" is the only action with its own always-visible inline text
-  // field. "Other…" also needs a detail, but — unlike spot — it's entered
-  // through the same "+" modal used for optional notes on every other
-  // action, just in "required" mode there.
-  function showsInlineText(actionValue) {
-    return actionValue === "spot";
+  function makeShoppingRow() {
+    const template = shoppingRowsWrap.querySelector(".shopping-row");
+    const row = template.cloneNode(true);
+    row.querySelectorAll("input").forEach((el) => {
+      el.value = "";
+    });
+    return row;
+  }
+
+  addShoppingBtn.addEventListener("click", () => {
+    shoppingRowsWrap.appendChild(makeShoppingRow());
+    shoppingRowsWrap.lastElementChild.querySelector(".shopping-item").focus();
+  });
+
+  // Every action gets the same "+" button once picked. For most actions
+  // it's an optional extra note; for "Spot clean" and "Other…" — which need
+  // a detail to mean anything — the same modal instead captures that
+  // required text, just with wording to match.
+  const ROOM_TEXT_MODAL = {
+    spot: { title: "Spot clean", placeholder: "e.g. the stovetop", required: true },
+    other: { title: "Describe what needs doing", placeholder: "Describe what needs doing", required: true },
+  };
+  const DEFAULT_NOTES_MODAL = { title: "More instructions", placeholder: "e.g. use the eco spray under the sink", required: false };
+
+  function roomModalConfig(actionValue) {
+    return ROOM_TEXT_MODAL[actionValue] || DEFAULT_NOTES_MODAL;
   }
 
   form.addEventListener("change", (e) => {
     const select = e.target.closest(".room-action-select");
     if (!select) return;
     const row = select.closest(".room-row");
-    const textInput = row.querySelector(".room-action-text");
     const notesBtn = row.querySelector(".room-notes-btn");
     const notesValue = row.querySelector(".room-notes-value");
     const roomName = row.querySelector(".room-name").textContent;
-    const inline = showsInlineText(select.value);
 
-    textInput.hidden = !inline;
-    if (inline) textInput.focus();
-    else textInput.value = "";
-
-    notesBtn.hidden = inline;
     notesBtn.disabled = !select.value;
-    if (!select.value || inline) {
+    if (!select.value) {
       notesValue.value = "";
       notesBtn.classList.remove("has-notes");
     }
-    notesBtn.setAttribute(
-      "aria-label",
-      select.value === "other" ? `Describe what needs doing in ${roomName}` : `More instructions for ${roomName}`,
-    );
+    notesBtn.setAttribute("aria-label", `${roomModalConfig(select.value).title} for ${roomName}`);
   });
 
   function openRoomNotesModal(button) {
@@ -69,13 +81,13 @@
     const select = row.querySelector(".room-action-select");
     const roomLabel = row.querySelector(".room-name").textContent;
     const notesValue = row.querySelector(".room-notes-value");
-    const isOther = select.value === "other";
+    const config = roomModalConfig(select.value);
 
     AppModal.open({
-      title: isOther ? `Describe what needs doing — ${roomLabel}` : `More instructions — ${roomLabel}`,
+      title: `${config.title} — ${roomLabel}`,
       render(modal) {
         const textarea = document.createElement("textarea");
-        textarea.placeholder = isOther ? "Describe what needs doing" : "e.g. use the eco spray under the sink";
+        textarea.placeholder = config.placeholder;
         textarea.rows = 4;
         textarea.value = notesValue.value;
         modal.body.appendChild(textarea);
@@ -90,8 +102,8 @@
             modal.close();
             // The modal lives outside <form>, so saving it doesn't fire the
             // form's own input/change listeners — refresh Send's disabled
-            // state by hand (this is the only way "Other…"'s required text
-            // can turn Send on).
+            // state by hand (this is the only way a required "Spot clean" /
+            // "Other…" detail can turn Send on).
             refreshSendState();
           },
         });
@@ -118,14 +130,7 @@
       const actionLabel = select.options[select.selectedIndex].textContent;
       const modalText = row.querySelector(".room-notes-value").value.trim();
 
-      if (select.value === "spot") {
-        const text = row.querySelector(".room-action-text").value.trim();
-        if (!text) return;
-        entries.push({
-          item: { type: "room", room: select.dataset.room, action: select.value, text },
-          label: `${actionLabel} ${roomName}: ${text}`,
-        });
-      } else if (select.value === "other") {
+      if (roomModalConfig(select.value).required) {
         if (!modalText) return;
         entries.push({
           item: { type: "room", room: select.dataset.room, action: select.value, text: modalText },
@@ -145,13 +150,13 @@
       entries.push({ item: { type: el.dataset.simple }, label });
     });
 
-    const supermarketText = document.getElementById("supermarket-text").value.trim();
-    if (supermarketText) {
-      entries.push({
-        item: { type: "supermarket_item", text: supermarketText },
-        label: `Pick up from the supermarket: ${supermarketText}`,
-      });
-    }
+    shoppingRowsWrap.querySelectorAll(".shopping-row").forEach((row) => {
+      const item = row.querySelector(".shopping-item").value.trim();
+      if (!item) return;
+      const qty = row.querySelector(".shopping-qty").value.trim();
+      const text = qty ? `${item} × ${qty}` : item;
+      entries.push({ item: { type: "supermarket_item", text }, label: `Pick up from the supermarket: ${text}` });
+    });
 
     storeRowsWrap.querySelectorAll(".store-row").forEach((row) => {
       const select = row.querySelector(".store-select");
@@ -191,9 +196,7 @@
     form.reset();
 
     form.querySelectorAll(".room-row").forEach((row) => {
-      row.querySelector(".room-action-text").hidden = true;
       const notesBtn = row.querySelector(".room-notes-btn");
-      notesBtn.hidden = false;
       notesBtn.disabled = true;
       notesBtn.classList.remove("has-notes");
       notesBtn.setAttribute("aria-label", `More instructions for ${row.querySelector(".room-name").textContent}`);
@@ -202,6 +205,10 @@
     storeRowsWrap.querySelectorAll(".store-row").forEach((row, i) => {
       if (i === 0) row.querySelector(".store-custom").hidden = true;
       else row.remove();
+    });
+
+    shoppingRowsWrap.querySelectorAll(".shopping-row").forEach((row, i) => {
+      if (i > 0) row.remove();
     });
 
     refreshSendState();

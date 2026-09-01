@@ -36,7 +36,6 @@ export function createListPage(assignees: Assignee[]): string {
         >
           ${raw(plusIcon(16))}
         </button>
-        <input type="text" class="room-action-text" data-room="${room.key}" placeholder="e.g. the stovetop" hidden />
         <input type="hidden" class="room-notes-value" data-room="${room.key}" />
       </div>
     `,
@@ -76,8 +75,14 @@ export function createListPage(assignees: Assignee[]): string {
         </div>
 
         <div class="card">
-          <h3>Supermarket</h3>
-          <input type="text" id="supermarket-text" placeholder="e.g. milk, eggs, bread" />
+          <h3>Shopping list</h3>
+          <div id="shopping-rows">
+            <div class="shopping-row">
+              <input type="text" class="shopping-item" placeholder="e.g. milk" />
+              <input type="text" class="shopping-qty" placeholder="Qty" />
+            </div>
+          </div>
+          <button type="button" class="secondary add-row-btn" id="add-shopping-row">+ Add another item</button>
         </div>
 
         <div class="card">
@@ -93,7 +98,7 @@ export function createListPage(assignees: Assignee[]): string {
               <input type="text" class="store-items" placeholder="Items" />
             </div>
           </div>
-          <button type="button" class="secondary add-store-btn" id="add-store-row">+ Add another store</button>
+          <button type="button" class="secondary add-row-btn" id="add-store-row">+ Add another store</button>
         </div>
 
         <div class="card">
