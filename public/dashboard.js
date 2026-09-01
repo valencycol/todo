@@ -398,14 +398,6 @@
     });
   }
 
-  function debounce(fn, ms) {
-    let t;
-    return function (...args) {
-      clearTimeout(t);
-      t = setTimeout(() => fn.apply(null, args), ms);
-    };
-  }
-
   let commandFeedbackTimer = null;
 
   function showCommandFeedback(message, isError) {
@@ -421,11 +413,16 @@
   }
 
   function wireCompletedControls() {
+    const searchForm = document.getElementById("completed-search-form");
     const searchInput = document.getElementById("completed-search");
     const loadMoreBtn = document.getElementById("load-more-btn");
-    if (!searchInput) return;
+    if (!searchForm || !searchInput) return;
 
-    const debouncedHandle = debounce(async () => {
+    // Only runs on an explicit submit (the Go button, or pressing Enter in
+    // the field) — never mid-typing, so composing a long command like
+    // "enable superuser password ..." is never cut off partway through.
+    searchForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
       const raw = searchInput.value.trim();
 
       const enableMatch = raw.match(ENABLE_SUPERUSER_RE);
@@ -446,9 +443,7 @@
       }
 
       loadCompleted({ reset: true });
-    }, 300);
-
-    searchInput.addEventListener("input", debouncedHandle);
+    });
 
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener("click", () => loadCompleted({ reset: false }));

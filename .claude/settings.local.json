@@ -170,7 +170,8 @@
       "Bash(curl -s -c /tmp/prod_diag.txt -b /tmp/prod_diag.txt -X POST https://todo.colaco.se/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"crystalmeth\"}')",
       "Bash(curl -s -b /tmp/prod_diag.txt https://todo.colaco.se/dashboard/completed)",
       "Bash(rm -f /tmp/diag_prod_su*.mjs /tmp/verify_feedback.mjs /tmp/prod-*.png /tmp/fb-*.png /tmp/wrangler-dev-fb.log)",
-      "Bash(git -C /Users/valencycolaco/Desktop/todo status --short)"
+      "Bash(git -C /Users/valencycolaco/Desktop/todo status --short)",
+      "Bash(rm -f /tmp/verify_go.mjs /tmp/go-*.png /tmp/wrangler-dev-go.log)"
     ],
     "additionalDirectories": [
       "/tmp"

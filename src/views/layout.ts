@@ -11,7 +11,7 @@ export type NavPage = "create" | "active" | "completed";
  * key so an old cached script can never silently keep calling a route
  * that a later deploy removed.
  */
-const ASSET_VERSION = "12";
+const ASSET_VERSION = "13";
 
 export function topbar(active: NavPage): string {
   return html`

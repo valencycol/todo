@@ -376,9 +376,17 @@ button.destructive:hover { background: var(--red-bg); }
 
 /* ---------- Search field ---------- */
 
+.search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: var(--space-4);
+}
+
 .search-field {
   position: relative;
-  margin-bottom: var(--space-4);
+  flex: 1;
+  min-width: 0;
 }
 .search-field svg {
   position: absolute;
@@ -389,6 +397,8 @@ button.destructive:hover { background: var(--red-bg); }
   pointer-events: none;
 }
 .search-field input { padding-left: 40px; }
+
+.search-row button { flex-shrink: 0; padding: 10px 18px; }
 
 /* ---------- Status & task rows ---------- */
 
