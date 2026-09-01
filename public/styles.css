@@ -636,17 +636,6 @@ button.destructive:hover { background: var(--red-bg); }
 
 #pattern-error { min-height: 18px; margin: 14px 0 0; }
 
-.lock-actions { display: flex; gap: 10px; margin-top: 18px; }
-.lock-actions button { -webkit-tap-highlight-color: transparent; }
-.lock-actions button { flex: 1; }
-
-.lock-actions #pattern-clear {
-  background: none;
-  color: var(--gold);
-  border: 1px solid var(--gold-line);
-}
-.lock-actions #pattern-clear:hover { background: rgba(212, 175, 95, 0.18); }
-
 .pattern-grid[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
 
 /* ---------- Swipe-to-confirm logout ---------- */

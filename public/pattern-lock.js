@@ -6,7 +6,6 @@
   const svg = document.getElementById("pattern-lines");
   const path = document.getElementById("pattern-path");
   const errorEl = document.getElementById("pattern-error");
-  const clearBtn = document.getElementById("pattern-clear");
   const redirectTo = grid.dataset.redirect || "/";
 
   // Auto-submit happens either right when a real drag gesture is released,
@@ -146,12 +145,6 @@
     });
   });
 
-  clearBtn.addEventListener("click", () => {
-    cancelAutoSubmit();
-    clearError();
-    reset();
-  });
-
   async function attemptSubmit() {
     cancelAutoSubmit();
     if (submitting) return;
@@ -161,7 +154,6 @@
     }
 
     submitting = true;
-    clearBtn.disabled = true;
     grid.setAttribute("aria-busy", "true");
 
     try {
@@ -181,7 +173,6 @@
         clearError();
       }, 700);
       submitting = false;
-      clearBtn.disabled = false;
       grid.removeAttribute("aria-busy");
     }
   }

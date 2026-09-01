@@ -31,10 +31,6 @@ export function loginPage(opts: { redirectTo?: string } = {}): string {
         </div>
 
         <p id="pattern-error" class="error-text" role="alert" style="visibility:hidden;">Wrong pattern, try again.</p>
-
-        <div class="lock-actions">
-          <button type="button" class="secondary" id="pattern-clear">Clear</button>
-        </div>
       </div>
     </div>
   `;

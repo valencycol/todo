@@ -35,9 +35,10 @@
 
   // Actions like "Spot clean" and "Other…" need an accompanying detail —
   // reveal the text field only for those, with a placeholder to match. The
-  // "More instructions" button only makes sense once an action is picked
-  // (there's nothing to add instructions to for "No action"), so it stays
-  // disabled — and any notes already entered are dropped — until then.
+  // "More instructions" button is for everything else: it only makes sense
+  // once an action is picked (there's nothing to add instructions to for
+  // "No action"), and it hides entirely for spot/other since those already
+  // pop up their own text box.
   form.addEventListener("change", (e) => {
     const select = e.target.closest(".room-action-select");
     if (!select) return;
@@ -52,8 +53,9 @@
     if (needsText) textInput.focus();
     else textInput.value = "";
 
+    notesBtn.hidden = needsText;
     notesBtn.disabled = !select.value;
-    if (!select.value) {
+    if (!select.value || needsText) {
       notesValue.value = "";
       notesBtn.textContent = "More instructions";
       notesBtn.classList.remove("has-notes");
