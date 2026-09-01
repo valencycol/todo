@@ -10,7 +10,7 @@
 
   const mainEl = document.querySelector("main");
   const pageMode = mainEl ? mainEl.dataset.pageMode : "active";
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 2;
 
   let completedOffset = 0;
   let completedHasMore = false;
@@ -32,11 +32,34 @@
     return '<span class="status-pill pending">Pending</span>';
   }
 
-  function renderTask(task) {
-    const remark = task.remarks ? '<div class="remark">"' + esc(task.remarks) + '"</div>' : "";
+  // Wraps the first case-insensitive match of `query` inside `text` in
+  // <mark>, escaping everything else normally so search hits are easy to
+  // spot at a glance among a card's other tasks.
+  function highlight(text, query) {
+    const str = String(text ?? "");
+    if (!query) return esc(str);
+    const idx = str.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return esc(str);
+    const before = str.slice(0, idx);
+    const match = str.slice(idx, idx + query.length);
+    const after = str.slice(idx + query.length);
+    return esc(before) + "<mark>" + esc(match) + "</mark>" + esc(after);
+  }
+
+  function matchesQuery(task, query) {
+    if (!query) return false;
+    const q = query.toLowerCase();
+    return (task.label && task.label.toLowerCase().includes(q)) || (task.remarks && task.remarks.toLowerCase().includes(q));
+  }
+
+  function renderTask(task, query) {
+    const remark = task.remarks ? '<div class="remark">"' + highlight(task.remarks, query) + '"</div>' : "";
+    const rowClass = matchesQuery(task, query) ? "task-row search-hit" : "task-row";
     return (
-      '<div class="task-row"><div><div class="label">' +
-      esc(task.label) +
+      '<div class="' +
+      rowClass +
+      '"><div><div class="label">' +
+      highlight(task.label, query) +
       "</div>" +
       remark +
       "</div>" +
@@ -46,7 +69,7 @@
   }
 
   function renderActiveList(list) {
-    const rows = list.tasks.map(renderTask).join("");
+    const rows = list.tasks.map((t) => renderTask(t, "")).join("");
     return (
       '<div class="card list-card">' +
       '<div class="meta list-card-head">' +
@@ -64,8 +87,8 @@
     );
   }
 
-  function renderCompletedList(list) {
-    const rows = list.tasks.map(renderTask).join("");
+  function renderCompletedList(list, query) {
+    const rows = list.tasks.map((t) => renderTask(t, query)).join("");
     return (
       '<div class="card list-card">' +
       '<div class="meta">Requested ' +
@@ -117,7 +140,7 @@
     completedHasMore = data.hasMore;
 
     completedEl.innerHTML = completedItems.length
-      ? completedItems.map(renderCompletedList).join("")
+      ? completedItems.map((l) => renderCompletedList(l, query)).join("")
       : '<p class="empty-state">' + (query ? "No past tasks match your search." : "Nothing completed yet.") + "</p>";
 
     if (loadMoreBtn) loadMoreBtn.hidden = !completedHasMore;

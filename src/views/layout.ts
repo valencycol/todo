@@ -3,6 +3,16 @@ import { houseIcon } from "../lib/icons";
 
 export type NavPage = "create" | "active" | "completed";
 
+/**
+ * Bump this on every change to a file under /public. Static assets are
+ * served with `must-revalidate`, which should stop staleness on its own,
+ * but some browsers/paths (bfcache, flaky proxies) skip revalidation
+ * anyway — appending a version query string forces a genuinely new cache
+ * key so an old cached script can never silently keep calling a route
+ * that a later deploy removed.
+ */
+const ASSET_VERSION = "7";
+
 export function topbar(active: NavPage): string {
   return html`
     <header class="topbar">
@@ -21,7 +31,7 @@ export function topbar(active: NavPage): string {
 }
 
 export function pageShell(title: string, bodyHtml: string, extraScripts: string[] = []): string {
-  const scripts = extraScripts.map((src) => `<script src="${src}" defer></script>`).join("\n");
+  const scripts = extraScripts.map((src) => `<script src="${src}?v=${ASSET_VERSION}" defer></script>`).join("\n");
   return html`<!doctype html>
 <html lang="en">
 <head>
@@ -31,7 +41,7 @@ export function pageShell(title: string, bodyHtml: string, extraScripts: string[
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300..800;1,6..12,300..800&family=Varela+Round&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles.css?v=${ASSET_VERSION}" />
   ${raw(scripts)}
 </head>
 <body>

@@ -195,7 +195,7 @@ export interface CompletedListsPage {
   hasMore: boolean;
 }
 
-const DEFAULT_COMPLETED_PAGE_SIZE = 20;
+const DEFAULT_COMPLETED_PAGE_SIZE = 2;
 
 /**
  * Paginated + optionally searched completed history. "Completed" here means

@@ -30,18 +30,35 @@
     if (!custom.hidden) custom.focus();
   });
 
+  const ROOM_ACTIONS_NEEDING_TEXT = { spot: true, other: true };
+  const ROOM_TEXT_PLACEHOLDER = { spot: "e.g. the stovetop", other: "Describe what needs doing" };
+
+  // Actions like "Spot clean" and "Other…" need an accompanying detail —
+  // reveal the text field only for those, with a placeholder to match.
+  form.addEventListener("change", (e) => {
+    const select = e.target.closest(".room-action-select");
+    if (!select) return;
+    const row = select.closest(".room-row");
+    const textInput = row.querySelector(".room-action-text");
+    const needsText = ROOM_ACTIONS_NEEDING_TEXT[select.value] === true;
+    textInput.hidden = !needsText;
+    textInput.placeholder = ROOM_TEXT_PLACEHOLDER[select.value] || "Details";
+    if (needsText) textInput.focus();
+    else textInput.value = "";
+  });
+
   function collectItems() {
     const items = [];
 
-    form.querySelectorAll('input[type="checkbox"][data-room]').forEach((el) => {
-      if (el.checked) {
-        items.push({ type: "room", room: el.dataset.room, mode: el.dataset.mode });
+    form.querySelectorAll(".room-action-select").forEach((el) => {
+      if (!el.value) return;
+      if (ROOM_ACTIONS_NEEDING_TEXT[el.value]) {
+        const row = el.closest(".room-row");
+        const text = row.querySelector(".room-action-text").value.trim();
+        if (text) items.push({ type: "room", room: el.dataset.room, action: el.value, text });
+      } else {
+        items.push({ type: "room", room: el.dataset.room, action: el.value });
       }
-    });
-
-    form.querySelectorAll(".spot-clean-input").forEach((el) => {
-      const text = el.value.trim();
-      if (text) items.push({ type: "room_spot", room: el.dataset.room, text });
     });
 
     form.querySelectorAll("[data-simple]").forEach((el) => {

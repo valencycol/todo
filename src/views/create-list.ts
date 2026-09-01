@@ -1,12 +1,8 @@
 import { html, raw } from "../lib/html";
-import { ROOMS, SIMPLE_TASKS, STORE_SUGGESTIONS } from "../lib/catalog";
+import { ROOMS, ROOM_ACTIONS, SIMPLE_TASKS, STORE_SUGGESTIONS, roomDisplayName } from "../lib/catalog";
 import { pageShell, topbar } from "./layout";
 import { sendIcon } from "../lib/icons";
 import type { Assignee } from "../lib/assignees";
-
-function roomDisplayName(label: string): string {
-  return label.replace(/^the /, "").replace(/^\w/, (c) => c.toUpperCase());
-}
 
 export function createListPage(assignees: Assignee[]): string {
   const assigneeOptions = assignees
@@ -21,16 +17,17 @@ export function createListPage(assignees: Assignee[]): string {
     )
     .join("");
 
+  const roomActionOptionTags = ROOM_ACTIONS.map((a) => html`<option value="${a.key}">${a.label}</option>`).join("");
+
   const roomRows = ROOMS.map(
     (room) => html`
       <div class="room-row">
-        <div class="room-row-top">
-          <span class="room-name">${roomDisplayName(room.label)}</span>
-          <label class="checkbox-pill">
-            <input type="checkbox" data-room="${room.key}" data-mode="clean" /> Clean
-          </label>
-        </div>
-        <input type="text" class="spot-clean-input" data-room="${room.key}" placeholder="Spot clean (optional) — e.g. the stovetop" />
+        <span class="room-name">${roomDisplayName(room.label)}</span>
+        <select class="room-action-select" data-room="${room.key}">
+          <option value="">No action</option>
+          ${raw(roomActionOptionTags)}
+        </select>
+        <input type="text" class="room-action-text" data-room="${room.key}" placeholder="Details" hidden />
       </div>
     `,
   ).join("");
