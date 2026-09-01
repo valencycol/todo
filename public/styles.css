@@ -546,9 +546,9 @@ button.destructive:hover { background: var(--red-bg); }
   gap: 10px;
   color: var(--gold);
 }
-.lock-card .brand h1 { margin: 0; font-size: 22px; color: var(--color-foreground); }
-.lock-subtitle { margin: 2px 0 0; color: var(--color-muted-foreground); font-size: 14px; font-weight: 600; }
-.lock-hint { margin: 18px 0 20px; font-size: 13px; color: var(--color-muted-foreground); }
+.lock-card .brand h1 { margin: 0; font-size: 22px; color: #fff; }
+.lock-subtitle { margin: 2px 0 0; color: rgba(255, 255, 255, 0.85); font-size: 14px; font-weight: 600; }
+.lock-hint { margin: 18px 0 20px; font-size: 13px; color: rgba(255, 255, 255, 0.75); }
 
 .pattern-grid {
   position: relative;
