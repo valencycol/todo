@@ -7,11 +7,19 @@
   const path = document.getElementById("pattern-path");
   const errorEl = document.getElementById("pattern-error");
   const clearBtn = document.getElementById("pattern-clear");
-  const unlockBtn = document.getElementById("pattern-unlock");
   const redirectTo = grid.dataset.redirect || "/";
+
+  // Auto-submit happens either right when a real drag gesture is released,
+  // or — for the tap/keyboard alternative, where every dot is its own brief
+  // pointerdown+pointerup — after a short pause with no new dot added, since
+  // there's no single "release" event that means "pattern finished" there.
+  const TAP_SETTLE_MS = 500;
 
   let selected = [];
   let dragging = false;
+  let dotsAddedThisPress = 0;
+  let settleTimer = null;
+  let submitting = false;
 
   function syncSvgSize() {
     const r = grid.getBoundingClientRect();
@@ -42,12 +50,24 @@
     path.setAttribute("d", "");
   }
 
+  function cancelAutoSubmit() {
+    clearTimeout(settleTimer);
+    settleTimer = null;
+  }
+
+  function scheduleAutoSubmit() {
+    cancelAutoSubmit();
+    settleTimer = setTimeout(attemptSubmit, TAP_SETTLE_MS);
+  }
+
   function addDot(dot) {
     const idx = Number(dot.dataset.index);
     if (selected.includes(idx)) return;
     selected.push(idx);
     dot.classList.add("active");
+    dotsAddedThisPress += 1;
     redraw();
+    scheduleAutoSubmit();
   }
 
   function redraw(cursor) {
@@ -71,10 +91,12 @@
 
   // Continuous drag: press on a dot, move across others, release.
   grid.addEventListener("pointerdown", (e) => {
+    if (submitting) return;
     const dot = e.target.closest(".pattern-dot");
     if (!dot) return;
     clearError();
     dragging = true;
+    dotsAddedThisPress = 0;
     addDot(dot);
     grid.setPointerCapture(e.pointerId);
   });
@@ -99,6 +121,15 @@
     if (document.activeElement && document.activeElement.classList.contains("pattern-dot")) {
       document.activeElement.blur();
     }
+    // More than one dot added in this single press means a real drag
+    // gesture just finished — submit right away instead of waiting out the
+    // tap-settle delay. A single dot could just as easily be one tap in an
+    // ongoing tap sequence, so that case is left to the debounce below.
+    if (dotsAddedThisPress > 1) {
+      cancelAutoSubmit();
+      attemptSubmit();
+    }
+    dotsAddedThisPress = 0;
   }
 
   grid.addEventListener("pointerup", endDrag);
@@ -109,25 +140,29 @@
   // appends it, so the whole pattern can be built without ever dragging.
   dots.forEach((dot) => {
     dot.addEventListener("click", () => {
+      if (submitting) return;
       clearError();
       addDot(dot);
     });
   });
 
   clearBtn.addEventListener("click", () => {
+    cancelAutoSubmit();
     clearError();
     reset();
   });
 
-  async function submitPattern() {
+  async function attemptSubmit() {
+    cancelAutoSubmit();
+    if (submitting) return;
     if (selected.length < 3) {
       showError("Draw at least 3 dots.");
       return;
     }
 
-    unlockBtn.disabled = true;
+    submitting = true;
     clearBtn.disabled = true;
-    unlockBtn.setAttribute("aria-busy", "true");
+    grid.setAttribute("aria-busy", "true");
 
     try {
       const res = await fetch("/login", {
@@ -145,12 +180,9 @@
         reset();
         clearError();
       }, 700);
-    } finally {
-      unlockBtn.disabled = false;
+      submitting = false;
       clearBtn.disabled = false;
-      unlockBtn.removeAttribute("aria-busy");
+      grid.removeAttribute("aria-busy");
     }
   }
-
-  unlockBtn.addEventListener("click", submitPattern);
 })();

@@ -1,4 +1,5 @@
 export type TaskStatus = "pending" | "done" | "rejected";
+export type TaskPriority = "low" | "medium" | "high";
 
 export interface TaskRow {
   id: string;
@@ -11,6 +12,7 @@ export interface TaskRow {
   status: TaskStatus;
   completed_at: number | null; // set when status moves off "pending" (done or rejected)
   remarks: string | null;
+  priority: TaskPriority;
   created_at: number;
 }
 
@@ -37,6 +39,7 @@ export interface NewTaskInput {
   type: string;
   label: string;
   place: string | null;
+  priority: TaskPriority;
 }
 
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -64,6 +67,7 @@ export async function createListWithTasks(
     status: "pending",
     completed_at: null,
     remarks: null,
+    priority: item.priority,
     created_at: now,
   }));
 
@@ -71,10 +75,20 @@ export async function createListWithTasks(
     statements.push(
       db
         .prepare(
-          `INSERT INTO tasks (id, list_id, type, label, place, token, token_expires_at, status, completed_at, remarks, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, ?)`,
+          `INSERT INTO tasks (id, list_id, type, label, place, token, token_expires_at, status, completed_at, remarks, priority, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, ?, ?)`,
         )
-        .bind(task.id, task.list_id, task.type, task.label, task.place, task.token, task.token_expires_at, task.created_at),
+        .bind(
+          task.id,
+          task.list_id,
+          task.type,
+          task.label,
+          task.place,
+          task.token,
+          task.token_expires_at,
+          task.priority,
+          task.created_at,
+        ),
     );
   }
 

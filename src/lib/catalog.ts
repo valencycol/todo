@@ -50,21 +50,33 @@ export const STORE_SUGGESTIONS = ["Hemköp", "Coop", "City Gross", "ICA", "Salaa
 
 const MAX_TEXT_LEN = 500;
 
-export type RawSubmittedItem =
-  | { type: "room"; room: RoomKey; action: RoomActionKey; text?: string }
+export const TASK_PRIORITIES = ["low", "medium", "high"] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
+const DEFAULT_PRIORITY: TaskPriority = "medium";
+
+export type RawSubmittedItem = {
+  priority?: unknown;
+} & (
+  | { type: "room"; room: RoomKey; action: RoomActionKey; text?: string; notes?: string }
   | { type: SimpleTaskType }
   | { type: "supermarket_item"; text: string }
   | { type: "store_item"; place: string; text: string }
-  | { type: "general"; text: string };
+  | { type: "general"; text: string }
+);
 
 export interface ResolvedTask {
   type: string;
   label: string;
   place: string | null;
+  priority: TaskPriority;
 }
 
 function cleanText(value: unknown): string {
   return String(value ?? "").trim().slice(0, MAX_TEXT_LEN);
+}
+
+function resolvePriority(value: unknown): TaskPriority {
+  return (TASK_PRIORITIES as readonly unknown[]).includes(value) ? (value as TaskPriority) : DEFAULT_PRIORITY;
 }
 
 /**
@@ -75,6 +87,7 @@ function cleanText(value: unknown): string {
 export function resolveSubmittedItem(item: unknown): ResolvedTask | null {
   if (!item || typeof item !== "object") return null;
   const raw = item as Record<string, unknown>;
+  const priority = resolvePriority(raw.priority);
 
   switch (raw.type) {
     case "room": {
@@ -82,36 +95,42 @@ export function resolveSubmittedItem(item: unknown): ResolvedTask | null {
       const action = ROOM_ACTIONS.find((a) => a.key === raw.action);
       if (!room || !action) return null;
 
+      // `notes`, entered via the "More instructions" modal, is optional
+      // extra detail on top of whatever action was picked — unlike `text`
+      // below, which is the action's own required detail for spot/other.
+      const notes = cleanText(raw.notes);
+
       if (!action.needsText) {
-        return { type: `${action.key}_${room.key}`, label: `${action.label} ${room.label}`, place: null };
+        const label = notes ? `${action.label} ${room.label}: ${notes}` : `${action.label} ${room.label}`;
+        return { type: `${action.key}_${room.key}`, label, place: null, priority };
       }
 
       const text = cleanText(raw.text);
       if (!text) return null;
-      return action.key === "spot"
-        ? { type: `spot_${room.key}`, label: `Spot clean ${room.label}: ${text}`, place: null }
-        : { type: `other_${room.key}`, label: `${roomDisplayName(room.label)}: ${text}`, place: null };
+      const base =
+        action.key === "spot" ? `Spot clean ${room.label}: ${text}` : `${roomDisplayName(room.label)}: ${text}`;
+      return { type: `${action.key}_${room.key}`, label: notes ? `${base} (${notes})` : base, place: null, priority };
     }
     case "supermarket_item": {
       const text = cleanText(raw.text);
       if (!text) return null;
-      return { type: "supermarket_item", label: `Pick up from the supermarket: ${text}`, place: null };
+      return { type: "supermarket_item", label: `Pick up from the supermarket: ${text}`, place: null, priority };
     }
     case "store_item": {
       const place = cleanText(raw.place);
       const text = cleanText(raw.text);
       if (!place || !text) return null;
-      return { type: "store_item", label: `Pick up from ${place}: ${text}`, place };
+      return { type: "store_item", label: `Pick up from ${place}: ${text}`, place, priority };
     }
     case "general": {
       const text = cleanText(raw.text);
       if (!text) return null;
-      return { type: "general", label: text, place: null };
+      return { type: "general", label: text, place: null, priority };
     }
     default: {
       const found = SIMPLE_TASKS.find((t) => t.type === raw.type);
       if (!found) return null;
-      return { type: found.type, label: found.label, place: null };
+      return { type: found.type, label: found.label, place: null, priority };
     }
   }
 }

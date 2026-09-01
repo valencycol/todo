@@ -34,7 +34,6 @@ export function loginPage(opts: { redirectTo?: string } = {}): string {
 
         <div class="lock-actions">
           <button type="button" class="secondary" id="pattern-clear">Clear</button>
-          <button type="button" id="pattern-unlock">Unlock</button>
         </div>
       </div>
     </div>

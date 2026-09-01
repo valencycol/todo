@@ -224,7 +224,23 @@ input::placeholder, textarea::placeholder { color: #94a3b8; }
   font-size: 13px;
 }
 
+.room-notes-btn {
+  order: 1;
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.room-notes-btn.has-notes {
+  background: var(--color-muted);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .room-action-text {
+  order: 2;
   flex: 1 1 150px;
   min-width: 0;
   min-height: 38px;
@@ -624,18 +640,14 @@ button.destructive:hover { background: var(--red-bg); }
 .lock-actions button { -webkit-tap-highlight-color: transparent; }
 .lock-actions button { flex: 1; }
 
-.lock-actions #pattern-unlock {
-  background: var(--gold-line);
-  color: #1a1108;
-}
-.lock-actions #pattern-unlock:hover { background: var(--gold); }
-
 .lock-actions #pattern-clear {
   background: none;
   color: var(--gold);
   border: 1px solid var(--gold-line);
 }
 .lock-actions #pattern-clear:hover { background: rgba(212, 175, 95, 0.18); }
+
+.pattern-grid[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
 
 /* ---------- Swipe-to-confirm logout ---------- */
 
@@ -717,6 +729,74 @@ button.destructive:hover { background: var(--red-bg); }
 .swipe-thumb.snap { transition: transform 220ms ease; }
 .swipe-thumb:active { cursor: grabbing; transform: none; }
 .swipe-thumb:hover { background: var(--color-primary); }
+
+/* ---------- Modal dialog ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--color-card);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+}
+.modal-panel h2 { margin: 0 0 14px; font-size: 19px; }
+
+.modal-body textarea { margin-top: 0; }
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-actions button { flex: 0 0 auto; }
+
+.review-list { display: flex; flex-direction: column; gap: 14px; }
+
+.review-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.review-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.review-label { font-size: 14px; flex: 1 1 180px; }
+
+.priority-toggle {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  flex: 0 0 auto;
+}
+
+.priority-btn {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 0;
+  background: var(--color-card);
+  color: var(--color-muted-foreground);
+}
+.priority-btn:hover { transform: none; }
+.priority-btn + .priority-btn { border-left: 1px solid var(--color-border); }
+
+.priority-btn.priority-low.active { background: var(--green-bg); color: var(--green-text); }
+.priority-btn.priority-medium.active { background: var(--amber-bg); color: var(--amber-text); }
+.priority-btn.priority-high.active { background: var(--red-bg); color: var(--red-text); }
 
 /* ---------- Live indicator ---------- */
 

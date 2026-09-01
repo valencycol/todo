@@ -27,7 +27,9 @@ export function createListPage(assignees: Assignee[]): string {
           <option value="">No action</option>
           ${raw(roomActionOptionTags)}
         </select>
+        <button type="button" class="secondary room-notes-btn" data-room="${room.key}" disabled>More instructions</button>
         <input type="text" class="room-action-text" data-room="${room.key}" placeholder="Details" hidden />
+        <input type="hidden" class="room-notes-value" data-room="${room.key}" />
       </div>
     `,
   ).join("");
@@ -101,5 +103,5 @@ export function createListPage(assignees: Assignee[]): string {
     </main>
   `;
 
-  return pageShell("New list — Colaco House To-Do List", body, ["/create.js", "/logout-swipe.js"]);
+  return pageShell("New list — Colaco House To-Do List", body, ["/modal.js", "/create.js", "/logout-swipe.js"]);
 }
