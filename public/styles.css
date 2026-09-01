@@ -1,20 +1,25 @@
 :root {
   color-scheme: light;
 
-  --color-primary: #2563eb;
+  /* "Cozy home" theme — warm terracotta + fresh green on a warm cream
+     ground, in place of the earlier cool blue/flat-SaaS look. Sourced from
+     2026's "warm minimalism" trend (grounded neutrals, clay/terracotta,
+     muted warmth over stark white) and a curated warm-terracotta palette
+     for home/lifestyle products. */
+  --color-primary: #9a3412;
   --color-on-primary: #ffffff;
   --color-secondary: #059669;
-  --color-accent: #d97706;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  --color-accent: #c2410c;
+  --color-background: #fffbeb;
+  --color-foreground: #1c1410;
   --color-card: #ffffff;
-  --color-muted: #f1f5fd;
-  --color-muted-foreground: #475569;
-  --color-border: #e4ecfc;
+  --color-muted: #f8f2f0;
+  --color-muted-foreground: #78716c;
+  --color-border: #f0e2da;
   --color-destructive: #dc2626;
-  --color-ring: #2563eb;
+  --color-ring: #9a3412;
 
-  --amber-bg: #fef3c7;
+  --amber-bg: #fef0d9;
   --amber-text: #92400e;
   --green-bg: #d1fae5;
   --green-text: #065f46;
@@ -28,8 +33,8 @@
   --space-3: 12px;
   --space-4: 16px;
   --space-6: 24px;
-  --font-display: "Varela Round", "Nunito Sans", sans-serif;
-  --font-body: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Calistoga", "Nunito Sans", serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -193,7 +198,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   border-color: var(--color-primary);
 }
 textarea { resize: vertical; min-height: 76px; }
-input::placeholder, textarea::placeholder { color: #94a3b8; }
+input::placeholder, textarea::placeholder { color: #a89a90; }
 
 /* ---------- Rooms & chores ---------- */
 
@@ -351,9 +356,9 @@ button, .btn {
   text-align: center;
   transition: background 150ms ease, opacity 150ms ease, transform 150ms ease;
 }
-button:hover, .btn:hover { background: #1d4ed8; }
+button:hover, .btn:hover { background: #7c2d12; }
 button:active, .btn:active { transform: translateY(1px); }
-button:disabled { background: #93aef0; cursor: not-allowed; transform: none; }
+button:disabled { background: #d7b7a8; cursor: not-allowed; transform: none; }
 button[aria-busy="true"] { opacity: 0.8; cursor: progress; }
 
 button.secondary, .btn.secondary {
@@ -404,7 +409,7 @@ button.destructive:hover { background: var(--red-bg); }
 .status-pill.done { background: var(--green-bg); color: var(--green-text); }
 .status-pill.rejected { background: var(--red-bg); color: var(--red-text); }
 
-.list-card { background: #fbfcfe; }
+.list-card { background: #fffdf8; }
 .list-card-head {
   display: flex;
   justify-content: space-between;

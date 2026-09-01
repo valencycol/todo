@@ -11,7 +11,7 @@ export type NavPage = "create" | "active" | "completed";
  * key so an old cached script can never silently keep calling a route
  * that a later deploy removed.
  */
-const ASSET_VERSION = "9";
+const ASSET_VERSION = "10";
 
 export function topbar(active: NavPage): string {
   return html`
@@ -39,7 +39,7 @@ export function pageShell(title: string, bodyHtml: string, extraScripts: string[
   <title>${title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300..800;1,6..12,300..800&family=Varela+Round&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Calistoga&family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=${ASSET_VERSION}" />
   ${raw(scripts)}
 </head>

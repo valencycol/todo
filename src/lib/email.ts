@@ -15,7 +15,7 @@ export async function sendListEmail(
           <td style="padding:10px 0;border-bottom:1px solid #e5e5e5;">
             <div style="font-size:15px;color:#1a1a1a;">${task.label}</div>
             <div style="margin-top:6px;">
-              <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:13px;">Mark complete</a>
+              <a href="${link}" style="display:inline-block;background:#9a3412;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:13px;">Mark complete</a>
             </div>
           </td>
         </tr>
