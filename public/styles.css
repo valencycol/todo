@@ -501,13 +501,13 @@ button.destructive:hover { background: var(--red-bg); }
   padding: 32px 24px;
   border-radius: 24px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.64);
-  backdrop-filter: blur(22px) saturate(160%) brightness(1.1);
-  -webkit-backdrop-filter: blur(22px) saturate(160%) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(26px) saturate(170%) brightness(1.15);
+  -webkit-backdrop-filter: blur(26px) saturate(170%) brightness(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow:
-    0 24px 60px rgba(6, 13, 22, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 24px 60px rgba(6, 13, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 .lock-card::before {
   content: "";
@@ -515,8 +515,12 @@ button.destructive:hover { background: var(--red-bg); }
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 35%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 35%);
   pointer-events: none;
+}
+
+.lock-wrap :focus-visible {
+  outline-color: var(--gold);
 }
 
 .lock-card .brand {
@@ -560,6 +564,8 @@ button.destructive:hover { background: var(--red-bg); }
 .pattern-grid.pattern-error .pattern-lines path { stroke: var(--color-destructive); }
 
 .pattern-dot {
+  -webkit-appearance: none;
+  appearance: none;
   background: none;
   border: none;
   display: flex;
@@ -568,6 +574,19 @@ button.destructive:hover { background: var(--red-bg); }
   padding: 0;
   min-height: 0;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pattern-dot:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+/* The base button reset only overrides `background` at rest, not on
+   :hover — so without this, the generic blue button:hover fill (higher
+   specificity than .pattern-dot alone) shows up any time the pointer
+   merely rests over a dot, click or not. */
+.pattern-dot:hover,
+.pattern-dot:active {
+  background: none;
 }
 
 .pattern-dot-inner {
@@ -602,6 +621,7 @@ button.destructive:hover { background: var(--red-bg); }
 #pattern-error { min-height: 18px; margin: 14px 0 0; }
 
 .lock-actions { display: flex; gap: 10px; margin-top: 18px; }
+.lock-actions button { -webkit-tap-highlight-color: transparent; }
 .lock-actions button { flex: 1; }
 
 .lock-actions #pattern-unlock {

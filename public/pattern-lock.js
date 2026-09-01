@@ -91,6 +91,14 @@
     if (!dragging) return;
     dragging = false;
     redraw();
+    // Pointer/touch interaction doesn't need to leave a dot holding real DOM
+    // focus (only real keyboard Tab navigation does) — releasing it here
+    // avoids the browser's native focus indicator on whichever dot the
+    // pointer happened to end on, which CSS can't override since it isn't
+    // drawn through outline/box-shadow.
+    if (document.activeElement && document.activeElement.classList.contains("pattern-dot")) {
+      document.activeElement.blur();
+    }
   }
 
   grid.addEventListener("pointerup", endDrag);

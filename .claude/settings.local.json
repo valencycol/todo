@@ -171,7 +171,12 @@
       "Bash(curl -s -b /tmp/prod_diag.txt https://todo.colaco.se/dashboard/completed)",
       "Bash(rm -f /tmp/diag_prod_su*.mjs /tmp/verify_feedback.mjs /tmp/prod-*.png /tmp/fb-*.png /tmp/wrangler-dev-fb.log)",
       "Bash(git -C /Users/valencycolaco/Desktop/todo status --short)",
-      "Bash(rm -f /tmp/verify_go.mjs /tmp/go-*.png /tmp/wrangler-dev-go.log)"
+      "Bash(rm -f /tmp/verify_go.mjs /tmp/go-*.png /tmp/wrangler-dev-go.log)",
+      "Bash(node verify_glass.mjs)",
+      "Bash(curl -s \"http://localhost:8787/styles.css\")",
+      "Bash(cp public/styles.css /tmp/styles.css.bak)",
+      "Bash(node inspect_hover.mjs)",
+      "Bash(rm -f /tmp/verify_glass.mjs /tmp/inspect_blue*.mjs /tmp/inspect_hover.mjs /tmp/inspect_disabled.mjs /tmp/glass-*.png /tmp/hover-only.png /tmp/styles.css.bak /tmp/wrangler-dev-glass*.log)"
     ],
     "additionalDirectories": [
       "/tmp"
