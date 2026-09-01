@@ -415,7 +415,6 @@
       if (enableMatch) {
         await setSuperuser(true, enableMatch[1]);
         searchInput.value = "";
-        searchInput.type = "text";
         loadCompleted({ reset: true });
         return;
       }
@@ -430,12 +429,7 @@
       loadCompleted({ reset: true });
     }, 300);
 
-    searchInput.addEventListener("input", () => {
-      // Mask the password portion as it's typed, once the command prefix
-      // is recognized — the box stays a normal search field otherwise.
-      searchInput.type = ENABLE_SUPERUSER_RE.test(searchInput.value.trim()) ? "password" : "text";
-      debouncedHandle();
-    });
+    searchInput.addEventListener("input", debouncedHandle);
 
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener("click", () => loadCompleted({ reset: false }));
