@@ -59,6 +59,6 @@
     //   wrangler email routing addresses create alvitagomes16@gmail.com
     // (then she has to click the verification email it sends). Until then
     // her option in the "Send to" picker stays greyed out.
-    "ALVITA_ENABLED": "false"
+    "ALVITA_ENABLED": "true"
   }
 }
