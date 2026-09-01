@@ -1,7 +1,7 @@
 import { html, raw } from "../lib/html";
 import { ROOMS, ROOM_ACTIONS, SIMPLE_TASKS, STORE_SUGGESTIONS, roomDisplayName } from "../lib/catalog";
 import { pageShell, topbar } from "./layout";
-import { sendIcon } from "../lib/icons";
+import { plusIcon, sendIcon } from "../lib/icons";
 import type { Assignee } from "../lib/assignees";
 
 export function createListPage(assignees: Assignee[]): string {
@@ -27,8 +27,16 @@ export function createListPage(assignees: Assignee[]): string {
           <option value="">No action</option>
           ${raw(roomActionOptionTags)}
         </select>
-        <button type="button" class="secondary room-notes-btn" data-room="${room.key}" disabled>More instructions</button>
-        <input type="text" class="room-action-text" data-room="${room.key}" placeholder="Details" hidden />
+        <button
+          type="button"
+          class="room-notes-btn"
+          data-room="${room.key}"
+          disabled
+          aria-label="More instructions for ${roomDisplayName(room.label)}"
+        >
+          ${raw(plusIcon(16))}
+        </button>
+        <input type="text" class="room-action-text" data-room="${room.key}" placeholder="e.g. the stovetop" hidden />
         <input type="hidden" class="room-notes-value" data-room="${room.key}" />
       </div>
     `,

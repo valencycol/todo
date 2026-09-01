@@ -12,6 +12,10 @@ export function houseIcon(size = 24): string {
   return icon(size, `<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9v10a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1V9"/>`);
 }
 
+export function plusIcon(size = 16): string {
+  return icon(size, `<path d="M12 5v14M5 12h14"/>`);
+}
+
 export function checkIcon(size = 20): string {
   return icon(size, `<path d="M4 12.5 9.5 18 20 6"/>`);
 }

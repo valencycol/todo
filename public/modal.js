@@ -32,6 +32,10 @@
       dismissed = true;
       document.removeEventListener("keydown", onKeydown);
       overlay.remove();
+      // Fires for every dismissal path (a button's own onClick, Escape, or
+      // a backdrop click) — not just an explicit "confirm" button — so
+      // callers can react to the modal going away however that happened.
+      if (typeof opts.onClose === "function") opts.onClose();
     }
     function onKeydown(e) {
       if (e.key === "Escape") close();

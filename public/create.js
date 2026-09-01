@@ -30,15 +30,14 @@
     if (!custom.hidden) custom.focus();
   });
 
-  const ROOM_ACTIONS_NEEDING_TEXT = { spot: true, other: true };
-  const ROOM_TEXT_PLACEHOLDER = { spot: "e.g. the stovetop", other: "Describe what needs doing" };
+  // "Spot clean" is the only action with its own always-visible inline text
+  // field. "Other…" also needs a detail, but — unlike spot — it's entered
+  // through the same "+" modal used for optional notes on every other
+  // action, just in "required" mode there.
+  function showsInlineText(actionValue) {
+    return actionValue === "spot";
+  }
 
-  // Actions like "Spot clean" and "Other…" need an accompanying detail —
-  // reveal the text field only for those, with a placeholder to match. The
-  // "More instructions" button is for everything else: it only makes sense
-  // once an action is picked (there's nothing to add instructions to for
-  // "No action"), and it hides entirely for spot/other since those already
-  // pop up their own text box.
   form.addEventListener("change", (e) => {
     const select = e.target.closest(".room-action-select");
     if (!select) return;
@@ -46,32 +45,37 @@
     const textInput = row.querySelector(".room-action-text");
     const notesBtn = row.querySelector(".room-notes-btn");
     const notesValue = row.querySelector(".room-notes-value");
-    const needsText = ROOM_ACTIONS_NEEDING_TEXT[select.value] === true;
+    const roomName = row.querySelector(".room-name").textContent;
+    const inline = showsInlineText(select.value);
 
-    textInput.hidden = !needsText;
-    textInput.placeholder = ROOM_TEXT_PLACEHOLDER[select.value] || "Details";
-    if (needsText) textInput.focus();
+    textInput.hidden = !inline;
+    if (inline) textInput.focus();
     else textInput.value = "";
 
-    notesBtn.hidden = needsText;
+    notesBtn.hidden = inline;
     notesBtn.disabled = !select.value;
-    if (!select.value || needsText) {
+    if (!select.value || inline) {
       notesValue.value = "";
-      notesBtn.textContent = "More instructions";
       notesBtn.classList.remove("has-notes");
     }
+    notesBtn.setAttribute(
+      "aria-label",
+      select.value === "other" ? `Describe what needs doing in ${roomName}` : `More instructions for ${roomName}`,
+    );
   });
 
   function openRoomNotesModal(button) {
     const row = button.closest(".room-row");
+    const select = row.querySelector(".room-action-select");
     const roomLabel = row.querySelector(".room-name").textContent;
     const notesValue = row.querySelector(".room-notes-value");
+    const isOther = select.value === "other";
 
     AppModal.open({
-      title: `More instructions — ${roomLabel}`,
+      title: isOther ? `Describe what needs doing — ${roomLabel}` : `More instructions — ${roomLabel}`,
       render(modal) {
         const textarea = document.createElement("textarea");
-        textarea.placeholder = "e.g. use the eco spray under the sink";
+        textarea.placeholder = isOther ? "Describe what needs doing" : "e.g. use the eco spray under the sink";
         textarea.rows = 4;
         textarea.value = notesValue.value;
         modal.body.appendChild(textarea);
@@ -82,9 +86,13 @@
           onClick: () => {
             const text = textarea.value.trim();
             notesValue.value = text;
-            button.textContent = text ? "Edit instructions" : "More instructions";
             button.classList.toggle("has-notes", Boolean(text));
             modal.close();
+            // The modal lives outside <form>, so saving it doesn't fire the
+            // form's own input/change listeners — refresh Send's disabled
+            // state by hand (this is the only way "Other…"'s required text
+            // can turn Send on).
+            refreshSendState();
           },
         });
       },
@@ -108,19 +116,25 @@
 
       const roomName = row.querySelector(".room-name").textContent;
       const actionLabel = select.options[select.selectedIndex].textContent;
-      const notes = row.querySelector(".room-notes-value").value.trim();
+      const modalText = row.querySelector(".room-notes-value").value.trim();
 
-      if (ROOM_ACTIONS_NEEDING_TEXT[select.value]) {
+      if (select.value === "spot") {
         const text = row.querySelector(".room-action-text").value.trim();
         if (!text) return;
         entries.push({
-          item: { type: "room", room: select.dataset.room, action: select.value, text, notes: notes || undefined },
-          label: notes ? `${actionLabel} ${roomName}: ${text} (${notes})` : `${actionLabel} ${roomName}: ${text}`,
+          item: { type: "room", room: select.dataset.room, action: select.value, text },
+          label: `${actionLabel} ${roomName}: ${text}`,
+        });
+      } else if (select.value === "other") {
+        if (!modalText) return;
+        entries.push({
+          item: { type: "room", room: select.dataset.room, action: select.value, text: modalText },
+          label: `${actionLabel} ${roomName}: ${modalText}`,
         });
       } else {
         entries.push({
-          item: { type: "room", room: select.dataset.room, action: select.value, notes: notes || undefined },
-          label: notes ? `${actionLabel} ${roomName}: ${notes}` : `${actionLabel} ${roomName}`,
+          item: { type: "room", room: select.dataset.room, action: select.value, notes: modalText || undefined },
+          label: modalText ? `${actionLabel} ${roomName}: ${modalText}` : `${actionLabel} ${roomName}`,
         });
       }
     });
@@ -167,13 +181,53 @@
   form.addEventListener("change", refreshSendState);
   refreshSendState();
 
+  // Puts every field back to its just-loaded state so another list can be
+  // built right away. form.reset() handles the native controls (selects,
+  // checkboxes, text inputs, and the hidden per-room notes values all revert
+  // to their server-rendered defaults) — what's left is the JS-driven
+  // visual state (hidden/disabled toggles, the has-notes dot) that reset()
+  // doesn't know about, plus any store rows added beyond the first.
+  function resetFormForNewList() {
+    form.reset();
+
+    form.querySelectorAll(".room-row").forEach((row) => {
+      row.querySelector(".room-action-text").hidden = true;
+      const notesBtn = row.querySelector(".room-notes-btn");
+      notesBtn.hidden = false;
+      notesBtn.disabled = true;
+      notesBtn.classList.remove("has-notes");
+      notesBtn.setAttribute("aria-label", `More instructions for ${row.querySelector(".room-name").textContent}`);
+    });
+
+    storeRowsWrap.querySelectorAll(".store-row").forEach((row, i) => {
+      if (i === 0) row.querySelector(".store-custom").hidden = true;
+      else row.remove();
+    });
+
+    refreshSendState();
+  }
+
   function showSentConfirmation() {
-    form.innerHTML =
-      '<div class="card confirm-card">' +
-      '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="confirm-icon" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5 10.8 15.5 16 9.5"/></svg>' +
-      "<h2>List sent</h2>" +
-      '<p class="meta">Your list has been emailed. Refresh this page to send another.</p>' +
-      "</div>";
+    AppModal.open({
+      title: "List sent",
+      onClose: resetFormForNewList,
+      render(modal) {
+        modal.body.style.textAlign = "center";
+
+        const icon = document.createElement("div");
+        icon.className = "confirm-icon";
+        icon.innerHTML =
+          '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5 10.8 15.5 16 9.5"/></svg>';
+
+        const message = document.createElement("p");
+        message.className = "meta";
+        message.textContent = "Your list has been emailed.";
+
+        modal.body.append(icon, message);
+
+        AppModal.addButton(modal.actionsBar, { label: "Done", onClick: modal.close });
+      },
+    });
   }
 
   const PRIORITY_LEVELS = ["low", "medium", "high"];
