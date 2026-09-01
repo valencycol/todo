@@ -122,6 +122,102 @@ export async function resolveTask(
 }
 
 /**
+ * Recomputes a list's `completed_at` from its tasks' current state. Used
+ * after an admin edit/delete, since those can move a task's status in
+ * either direction (e.g. un-reject it back to pending), unlike the normal
+ * one-way `resolveTask` flow.
+ */
+async function syncListCompletion(db: D1Database, listId: string): Promise<void> {
+  const pending = await db
+    .prepare("SELECT COUNT(*) AS n FROM tasks WHERE list_id = ? AND status = 'pending'")
+    .bind(listId)
+    .first<{ n: number }>();
+
+  if (pending && pending.n > 0) {
+    await db.prepare("UPDATE lists SET completed_at = NULL WHERE id = ?").bind(listId).run();
+    return;
+  }
+
+  const latest = await db
+    .prepare("SELECT MAX(completed_at) AS latest, COUNT(*) AS n FROM tasks WHERE list_id = ?")
+    .bind(listId)
+    .first<{ latest: number | null; n: number }>();
+
+  if (latest && latest.n > 0) {
+    await db.prepare("UPDATE lists SET completed_at = ? WHERE id = ?").bind(latest.latest, listId).run();
+  }
+}
+
+export type TaskUpdate = { label?: string; remarks?: string | null; status?: TaskStatus };
+
+/**
+ * Admin-only edit of an existing task's label/remarks/status. Returns
+ * false if the task doesn't exist. Changing `status` re-derives whether
+ * completed_at should be set on a task (and, via syncListCompletion,
+ * whether the list itself counts as active or completed).
+ */
+export async function updateTask(db: D1Database, taskId: string, update: TaskUpdate): Promise<boolean> {
+  const task = await db.prepare("SELECT list_id FROM tasks WHERE id = ?").bind(taskId).first<{ list_id: string }>();
+  if (!task) return false;
+
+  const sets: string[] = [];
+  const params: unknown[] = [];
+
+  if (update.label !== undefined) {
+    sets.push("label = ?");
+    params.push(update.label);
+  }
+  if (update.remarks !== undefined) {
+    sets.push("remarks = ?");
+    params.push(update.remarks);
+  }
+  if (update.status !== undefined) {
+    sets.push("status = ?", "completed_at = ?");
+    params.push(update.status, update.status === "pending" ? null : Date.now());
+  }
+
+  if (sets.length > 0) {
+    params.push(taskId);
+    await db
+      .prepare(`UPDATE tasks SET ${sets.join(", ")} WHERE id = ?`)
+      .bind(...params)
+      .run();
+  }
+
+  if (update.status !== undefined) {
+    await syncListCompletion(db, task.list_id);
+  }
+
+  return true;
+}
+
+/**
+ * Admin-only permanent delete of a task. If it was the list's last task,
+ * the (now-empty) list is deleted too, since every list is otherwise
+ * guaranteed to have at least one task. Returns null if the task doesn't
+ * exist, otherwise whether the parent list was deleted along with it.
+ */
+export async function deleteTask(db: D1Database, taskId: string): Promise<{ listDeleted: boolean } | null> {
+  const task = await db.prepare("SELECT list_id FROM tasks WHERE id = ?").bind(taskId).first<{ list_id: string }>();
+  if (!task) return null;
+
+  await db.prepare("DELETE FROM tasks WHERE id = ?").bind(taskId).run();
+
+  const remaining = await db
+    .prepare("SELECT COUNT(*) AS n FROM tasks WHERE list_id = ?")
+    .bind(task.list_id)
+    .first<{ n: number }>();
+
+  if (remaining && remaining.n === 0) {
+    await db.prepare("DELETE FROM lists WHERE id = ?").bind(task.list_id).run();
+    return { listDeleted: true };
+  }
+
+  await syncListCompletion(db, task.list_id);
+  return { listDeleted: false };
+}
+
+/**
  * Issues fresh tokens (new value + new 30-day expiry) for every still-open
  * task in a list, so an old copy of the email can no longer be used to
  * complete them. Returns the updated rows for re-sending, or null if the

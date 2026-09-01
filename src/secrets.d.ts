@@ -4,4 +4,5 @@
 interface Env {
   APP_PATTERN: string;
   SESSION_SECRET: string;
+  SUPERUSER_PASSWORD: string;
 }

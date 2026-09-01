@@ -4,6 +4,8 @@ import { authRoutes } from "./routes/auth";
 import { listsRoutes } from "./routes/lists";
 import { taskLinkRoutes } from "./routes/tasks";
 import { wsRoutes } from "./routes/ws";
+import { superuserRoutes } from "./routes/superuser";
+import { adminRoutes } from "./routes/admin";
 import { createListPage } from "./views/create-list";
 import { activeListsPage, completedListsPage } from "./views/dashboard";
 import { getAssignees } from "./lib/assignees";
@@ -33,6 +35,8 @@ app.route("/", authRoutes);
 app.route("/", listsRoutes);
 app.route("/", taskLinkRoutes);
 app.route("/", wsRoutes);
+app.route("/", superuserRoutes);
+app.route("/", adminRoutes);
 
 app.get("/", (c) => c.html(createListPage(getAssignees(c.env))));
 app.get("/dashboard", (c) => c.html(activeListsPage()));

@@ -6,8 +6,9 @@ export function activeListsPage(): string {
   const body = html`
     ${raw(topbar("active"))}
     <main data-page-mode="active">
-      <div class="conn-status" id="conn-status" style="margin-bottom:14px;">
-        <span class="pulse-dot"></span> Live
+      <div class="conn-status" style="margin-bottom:14px;">
+        <span id="conn-status"><span class="pulse-dot"></span> Live</span>
+        <span id="superuser-badge" class="superuser-badge" hidden>Superuser mode</span>
       </div>
 
       <div class="card">
@@ -23,8 +24,9 @@ export function completedListsPage(): string {
   const body = html`
     ${raw(topbar("completed"))}
     <main data-page-mode="completed">
-      <div class="conn-status" id="conn-status" style="margin-bottom:14px;">
-        <span class="pulse-dot"></span> Live
+      <div class="conn-status" style="margin-bottom:14px;">
+        <span id="conn-status"><span class="pulse-dot"></span> Live</span>
+        <span id="superuser-badge" class="superuser-badge" hidden>Superuser mode</span>
       </div>
 
       <div class="card">

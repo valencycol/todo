@@ -136,7 +136,22 @@
       "Bash(curl -s -b /tmp/cookies_lm.txt \"http://localhost:8787/api/lists/completed?limit=100&offset=0&q=dishes\")",
       "Bash(grep -n \"^button, .btn {\" /Users/valencycolaco/Desktop/todo/public/styles.css)",
       "Bash(node verify_loadmore_scenario.mjs)",
-      "Bash(rm -f /tmp/cookies_lm.txt /tmp/verify_loadmore_scenario.mjs /tmp/verify_zero.mjs /tmp/inspect_display*.mjs /tmp/wrangler-dev-lm.log)"
+      "Bash(rm -f /tmp/cookies_lm.txt /tmp/verify_loadmore_scenario.mjs /tmp/verify_zero.mjs /tmp/inspect_display*.mjs /tmp/wrangler-dev-lm.log)",
+      "Bash(grep -n \"statusPill\\(task\\) +\\\\s*$\\\\|adminControls +\\\\s*$\" /Users/valencycolaco/Desktop/todo/public/dashboard.js)",
+      "Bash(curl -s -c /tmp/cookies_su.txt -X POST http://localhost:8787/login -H \"Content-Type: application/json\" -d '{\"pattern\":[0,3,6,7,8],\"redirect\":\"/\"}' -o /dev/null)",
+      "Bash(curl -s -b /tmp/cookies_su.txt http://localhost:8787/api/superuser)",
+      "Bash(curl -s -b /tmp/cookies_su.txt -X POST http://localhost:8787/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"wrong\"}')",
+      "Bash(curl -s -c /tmp/cookies_su.txt -b /tmp/cookies_su.txt -X POST http://localhost:8787/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"crystalmeth\"}')",
+      "Bash(curl -s -b /tmp/cookies_su.txt http://localhost:8787/dashboard/completed)",
+      "Bash(node verify_superuser3.mjs)",
+      "Bash(node verify_superuser2.mjs)",
+      "Bash(node verify_su_full.mjs)",
+      "Bash(rm -f /tmp/cookies_su*.txt /tmp/verify_su*.mjs /tmp/verify_active_su.mjs /tmp/verify_superuser*.mjs /tmp/su-*.png /tmp/wrangler-dev-su.log)",
+      "Bash(curl -s -c /tmp/prod_su.txt -X POST https://todo.colaco.se/login -H \"Content-Type: application/json\" -d '{\"pattern\":[0,3,6,7,8],\"redirect\":\"/\"}' -o /dev/null)",
+      "Bash(curl -s -b /tmp/prod_su.txt https://todo.colaco.se/api/superuser)",
+      "Bash(curl -s -b /tmp/prod_su.txt -X POST https://todo.colaco.se/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"wrong\"}')",
+      "Bash(curl -s -c /tmp/prod_su.txt -b /tmp/prod_su.txt -X POST https://todo.colaco.se/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"crystalmeth\"}')",
+      "Bash(curl -s -c /tmp/prod_su.txt -b /tmp/prod_su.txt -X POST https://todo.colaco.se/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"disable\"}')"
     ],
     "additionalDirectories": [
       "/tmp"
