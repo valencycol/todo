@@ -1,0 +1,64 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "todo-colaco",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-25",
+  "observability": {
+    "enabled": true
+  },
+
+  "routes": [
+    { "pattern": "todo.colaco.se", "custom_domain": true }
+  ],
+
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "todo-colaco-db",
+      "database_id": "914ba95d-2b90-4f7f-b1da-974c6f2fbc2f",
+      "migrations_dir": "./migrations"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "BROADCAST_HUB", "class_name": "BroadcastHub" }
+    ]
+  },
+
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["BroadcastHub"] }
+  ],
+
+  "send_email": [
+    {
+      "name": "EMAIL",
+      // alvitagomes16@gmail.com is listed here so sending "just works" the
+      // moment she's verified — until then, sends to her fail closed (same
+      // as valency.colaco@liu.se did before verification), which is exactly
+      // why ALVITA_ENABLED below keeps her greyed out in the UI until then.
+      "allowed_destination_addresses": ["valency007@gmail.com", "alvitagomes16@gmail.com"]
+    }
+  ],
+
+  "vars": {
+    "FROM_EMAIL": "todo@colaco.se",
+    "FROM_NAME": "Colaco House To-Do List",
+    "SITE_URL": "https://todo.colaco.se",
+
+    "ASSIGNEE_VALENCY_EMAIL": "valency007@gmail.com",
+    "ASSIGNEE_ALVITA_EMAIL": "alvitagomes16@gmail.com",
+
+    // Flip to "true" once alvitagomes16@gmail.com is verified as a
+    // Cloudflare Email Sending destination address:
+    //   wrangler email routing addresses create alvitagomes16@gmail.com
+    // (then she has to click the verification email it sends). Until then
+    // her option in the "Send to" picker stays greyed out.
+    "ALVITA_ENABLED": "false"
+  }
+}
