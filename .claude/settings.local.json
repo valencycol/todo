@@ -161,7 +161,10 @@
       "Bash(grep -n \"#[0-9a-fA-F]\\\\{3,8\\\\}\" /Users/valencycolaco/Desktop/todo/src/lib/email.ts)",
       "Bash(grep -n \"#[0-9a-fA-F]\\\\{3,8\\\\}\" /Users/valencycolaco/Desktop/todo/public/styles.css)",
       "Bash(python3 -)",
-      "Bash(rm -f /tmp/cookies_theme.txt /tmp/verify_theme*.mjs /tmp/theme-*.png /tmp/wrangler-dev-theme.log)"
+      "Bash(rm -f /tmp/cookies_theme.txt /tmp/verify_theme*.mjs /tmp/theme-*.png /tmp/wrangler-dev-theme.log)",
+      "Bash(grep -n -i \"glass\\\\|backdrop-filter\\\\|navy\\\\|gold\" /Users/valencycolaco/Desktop/allie/worker/site/style.css | head -60)",
+      "Read(//Users/valencycolaco/Desktop/allie/worker/site/**)",
+      "Bash(rm -f /tmp/verify_revert.mjs /tmp/lock-navy-gold*.png /tmp/revert-create.png /tmp/wrangler-dev-revert.log)"
     ],
     "additionalDirectories": [
       "/tmp"
