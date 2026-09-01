@@ -388,7 +388,8 @@ button.destructive:hover { background: var(--red-bg); }
 .btn-icon svg { flex-shrink: 0; }
 
 .task-actions { display: flex; gap: 10px; margin-top: var(--space-3); }
-.task-actions button { flex: 1; }
+.task-actions button { flex: 1; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: nowrap; }
+.task-actions button span { overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Search field ---------- */
 

@@ -39,7 +39,7 @@ export async function sendListEmail(
               <span style="display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;background:${color.bg};color:${color.text};">${task.priority}</span>
             </div>
             <div style="margin-top:6px;">
-              <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:13px;">Mark complete</a>
+              <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:13px;">Respond</a>
             </div>
           </td>
         </tr>
@@ -56,7 +56,7 @@ export async function sendListEmail(
 
   const intro = opts.reminder
     ? `Reminder — requested ${requestedAt}, still open. Links below are freshly issued and replace any earlier copy of this email, which no longer works.`
-    : `Requested ${requestedAt}. Click "Mark complete" on each item once it's done — each link works once and expires after 30 days.`;
+    : `Requested ${requestedAt}. Click "Respond" on each item once it's done — each link works once and expires after 30 days.`;
 
   const htmlBody = html`
     <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;">
@@ -69,7 +69,7 @@ export async function sendListEmail(
   const textBody = [
     `${opts.reminder ? "To-do list reminder" : "New to-do list"} — requested ${requestedAt}`,
     "",
-    ...sorted.map((task) => `- [${task.priority}] ${task.label}\n  Mark complete: ${env.SITE_URL}/t/${task.token}`),
+    ...sorted.map((task) => `- [${task.priority}] ${task.label}\n  Respond: ${env.SITE_URL}/t/${task.token}`),
   ].join("\n");
 
   await env.EMAIL.send({

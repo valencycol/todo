@@ -1,6 +1,5 @@
 import { html, raw } from "../lib/html";
 import { pageShell } from "./layout";
-import { houseIcon } from "../lib/icons";
 
 export function loginPage(opts: { redirectTo?: string } = {}): string {
   const dots = Array.from({ length: 9 }, (_, i) => i)
@@ -17,7 +16,6 @@ export function loginPage(opts: { redirectTo?: string } = {}): string {
     <div class="lock-wrap">
       <div class="lock-card">
         <div class="brand">
-          ${raw(houseIcon(36))}
           <h1>Colaco House</h1>
         </div>
         <p class="lock-subtitle">To-Do List</p>
