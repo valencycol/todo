@@ -164,7 +164,13 @@
       "Bash(rm -f /tmp/cookies_theme.txt /tmp/verify_theme*.mjs /tmp/theme-*.png /tmp/wrangler-dev-theme.log)",
       "Bash(grep -n -i \"glass\\\\|backdrop-filter\\\\|navy\\\\|gold\" /Users/valencycolaco/Desktop/allie/worker/site/style.css | head -60)",
       "Read(//Users/valencycolaco/Desktop/allie/worker/site/**)",
-      "Bash(rm -f /tmp/verify_revert.mjs /tmp/lock-navy-gold*.png /tmp/revert-create.png /tmp/wrangler-dev-revert.log)"
+      "Bash(rm -f /tmp/verify_revert.mjs /tmp/lock-navy-gold*.png /tmp/revert-create.png /tmp/wrangler-dev-revert.log)",
+      "Bash(curl -s -c /tmp/prod_diag.txt -X POST https://todo.colaco.se/login -H \"Content-Type: application/json\" -d '{\"pattern\":[0,3,6,7,8],\"redirect\":\"/\"}')",
+      "Bash(curl -s -b /tmp/prod_diag.txt https://todo.colaco.se/api/superuser)",
+      "Bash(curl -s -c /tmp/prod_diag.txt -b /tmp/prod_diag.txt -X POST https://todo.colaco.se/api/superuser -H \"Content-Type: application/json\" -d '{\"action\":\"enable\",\"password\":\"crystalmeth\"}')",
+      "Bash(curl -s -b /tmp/prod_diag.txt https://todo.colaco.se/dashboard/completed)",
+      "Bash(rm -f /tmp/diag_prod_su*.mjs /tmp/verify_feedback.mjs /tmp/prod-*.png /tmp/fb-*.png /tmp/wrangler-dev-fb.log)",
+      "Bash(git -C /Users/valencycolaco/Desktop/todo status --short)"
     ],
     "additionalDirectories": [
       "/tmp"

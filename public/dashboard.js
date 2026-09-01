@@ -289,6 +289,7 @@
   }
 
   async function setSuperuser(enable, password) {
+    let error = null;
     try {
       const res = await fetch("/api/superuser", {
         method: "POST",
@@ -297,12 +298,14 @@
       });
       const data = await res.json().catch(() => ({}));
       superuserActive = !!data.active;
+      if (!res.ok) error = data.error || "Something went wrong.";
     } catch (err) {
-      // leave superuserActive as-is on network failure
+      error = "Couldn't reach the server.";
     }
     updateSuperuserBadge();
     if (pageMode === "active") renderActiveFromCache();
     else renderCompletedFromCache();
+    return { ok: !error, error: error };
   }
 
   function wireResendButtons() {
@@ -403,6 +406,20 @@
     };
   }
 
+  let commandFeedbackTimer = null;
+
+  function showCommandFeedback(message, isError) {
+    const el = document.getElementById("search-command-feedback");
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = isError ? "var(--color-destructive)" : "var(--color-secondary)";
+    el.style.display = "block";
+    clearTimeout(commandFeedbackTimer);
+    commandFeedbackTimer = setTimeout(() => {
+      el.style.display = "none";
+    }, 3000);
+  }
+
   function wireCompletedControls() {
     const searchInput = document.getElementById("completed-search");
     const loadMoreBtn = document.getElementById("load-more-btn");
@@ -413,15 +430,17 @@
 
       const enableMatch = raw.match(ENABLE_SUPERUSER_RE);
       if (enableMatch) {
-        await setSuperuser(true, enableMatch[1]);
+        const result = await setSuperuser(true, enableMatch[1]);
         searchInput.value = "";
+        showCommandFeedback(result.ok ? "Superuser mode enabled." : result.error, !result.ok);
         loadCompleted({ reset: true });
         return;
       }
 
       if (DISABLE_SUPERUSER_RE.test(raw)) {
-        await setSuperuser(false);
+        const result = await setSuperuser(false);
         searchInput.value = "";
+        showCommandFeedback(result.ok ? "Superuser mode disabled." : result.error, !result.ok);
         loadCompleted({ reset: true });
         return;
       }

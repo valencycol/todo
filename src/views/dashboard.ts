@@ -35,6 +35,7 @@ export function completedListsPage(): string {
           ${raw(searchIcon(16))}
           <input type="text" id="completed-search" placeholder="Search past tasks…" />
         </div>
+        <p id="search-command-feedback" class="error-text" style="display:none;margin-top:-8px;margin-bottom:12px;"></p>
         <div id="completed-lists"><p class="empty-state">Loading…</p></div>
         <button type="button" class="secondary" id="load-more-btn" hidden style="width:100%;margin-top:12px;">Load more</button>
       </div>
