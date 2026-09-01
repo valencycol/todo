@@ -16,12 +16,11 @@ const ASSET_VERSION = "9";
 export function topbar(active: NavPage): string {
   return html`
     <header class="topbar">
-      <a href="/" class="brand-mark">
+      <a href="/" class="brand-mark ${active === "create" ? "active" : ""}">
         ${raw(houseIcon(22))}
         <span>Colaco House</span>
       </a>
       <nav>
-        <a href="/" class="${active === "create" ? "active" : ""}">New list</a>
         <a href="/dashboard" class="${active === "active" ? "active" : ""}">Active</a>
         <a href="/dashboard/completed" class="${active === "completed" ? "active" : ""}">Completed</a>
         <button type="button" class="nav-link-btn" id="nav-logout-btn">Log out</button>
