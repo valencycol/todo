@@ -746,6 +746,12 @@ button.destructive:hover { background: var(--red-bg); }
 
 .modal-body textarea { margin-top: 0; }
 
+/* Superuser passphrase prompt: the label needs air above it and clear
+   separation from the field, which otherwise sit flush against each other. */
+.modal-body label { display: block; margin: 14px 0 6px; font-size: 14px; font-weight: 600; }
+.modal-body input[type="password"] { display: block; width: 100%; box-sizing: border-box; }
+.modal-body .error-text { margin: 10px 0 0; }
+
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 .modal-actions button { flex: 0 0 auto; }
 

@@ -17,7 +17,7 @@ export function activeListsPage(): string {
       </div>
     </main>
   `;
-  return pageShell("Active lists — Colaco House To-Do List", body, ["/dashboard.js", "/logout-swipe.js"]);
+  return pageShell("Active lists — Colaco House To-Do List", body, ["/modal.js", "/dashboard.js", "/logout-swipe.js"]);
 }
 
 export function completedListsPage(): string {
@@ -44,5 +44,5 @@ export function completedListsPage(): string {
       </div>
     </main>
   `;
-  return pageShell("Completed lists — Colaco House To-Do List", body, ["/dashboard.js", "/logout-swipe.js"]);
+  return pageShell("Completed lists — Colaco House To-Do List", body, ["/modal.js", "/dashboard.js", "/logout-swipe.js"]);
 }

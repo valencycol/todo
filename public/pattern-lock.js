@@ -12,7 +12,9 @@
   // or — for the tap/keyboard alternative, where every dot is its own brief
   // pointerdown+pointerup — after a short pause with no new dot added, since
   // there's no single "release" event that means "pattern finished" there.
-  const TAP_SETTLE_MS = 500;
+  // Generous on purpose: 500ms cut people off mid-pattern, submitting the
+  // dots entered so far while they were still adding the rest.
+  const TAP_SETTLE_MS = 2000;
 
   let selected = [];
   let dragging = false;
@@ -66,7 +68,12 @@
     dot.classList.add("active");
     dotsAddedThisPress += 1;
     redraw();
-    scheduleAutoSubmit();
+
+    // Never while the pointer is still down: a slow drag would submit itself
+    // part-way through. A drag ends at pointerup, which submits there; this
+    // debounce is only for entries with no such ending — taps, and keyboard
+    // or switch users activating each dot in turn.
+    if (!dragging) scheduleAutoSubmit();
   }
 
   function redraw(cursor) {
@@ -127,6 +134,11 @@
     if (dotsAddedThisPress > 1) {
       cancelAutoSubmit();
       attemptSubmit();
+    } else {
+      // A single dot in this press is one tap of an ongoing sequence, so the
+      // debounce starts here rather than in addDot, which skipped it while the
+      // pointer was down.
+      scheduleAutoSubmit();
     }
     dotsAddedThisPress = 0;
   }

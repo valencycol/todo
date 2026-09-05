@@ -12,7 +12,9 @@
   const pageMode = mainEl ? mainEl.dataset.pageMode : "active";
   const PAGE_SIZE = 2;
 
-  const ENABLE_SUPERUSER_RE = /^enable superuser password (.+)$/i;
+  // The passphrase is never typed here — these only open a masked prompt, so
+  // it is not left sitting in a visible field or offered to autofill.
+  const ENABLE_SUPERUSER_RE = /^(?:enter|enable) superuser$/i;
   const DISABLE_SUPERUSER_RE = /^disable superuser$/i;
 
   const PENCIL_SVG =
@@ -288,6 +290,64 @@
     updateSuperuserBadge();
   }
 
+  // Asks for the passphrase in a masked field rather than the search box.
+  // Nothing here knows what it should be — the server compares it.
+  function promptForSuperuser() {
+    AppModal.open({
+      title: "Enable superuser",
+      render: function (modal) {
+        const help = document.createElement("p");
+        help.textContent = "Deleting and editing stay switched off until this is confirmed.";
+
+        const label = document.createElement("label");
+        label.setAttribute("for", "superuser-phrase");
+        label.textContent = "Passphrase";
+
+        const input = document.createElement("input");
+        input.id = "superuser-phrase";
+        input.type = "password";
+        input.autocomplete = "off";
+        input.spellcheck = false;
+
+        const error = document.createElement("p");
+        error.className = "error-text";
+        error.hidden = true;
+
+        modal.body.append(help, label, input, error);
+        setTimeout(function () { input.focus(); }, 0);
+
+        async function confirm() {
+          if (!input.value) return;
+          error.hidden = true;
+
+          const result = await setSuperuser(true, input.value);
+          // Never leave the phrase behind, whether it worked or not.
+          input.value = "";
+
+          if (result.ok) {
+            modal.close();
+            showCommandFeedback("Superuser mode enabled.", false);
+            loadCompleted({ reset: true });
+            return;
+          }
+
+          error.textContent = result.error || "That passphrase is not right.";
+          error.hidden = false;
+          input.focus();
+        }
+
+        input.addEventListener("keydown", function (e) {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          confirm();
+        });
+
+        AppModal.addButton(modal.actionsBar, { label: "Cancel", variant: "secondary", onClick: modal.close });
+        AppModal.addButton(modal.actionsBar, { label: "Confirm", onClick: confirm });
+      },
+    });
+  }
+
   async function setSuperuser(enable, password) {
     let error = null;
     try {
@@ -425,12 +485,9 @@
       e.preventDefault();
       const raw = searchInput.value.trim();
 
-      const enableMatch = raw.match(ENABLE_SUPERUSER_RE);
-      if (enableMatch) {
-        const result = await setSuperuser(true, enableMatch[1]);
+      if (ENABLE_SUPERUSER_RE.test(raw)) {
         searchInput.value = "";
-        showCommandFeedback(result.ok ? "Superuser mode enabled." : result.error, !result.ok);
-        loadCompleted({ reset: true });
+        promptForSuperuser();
         return;
       }
 
