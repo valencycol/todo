@@ -80,3 +80,27 @@ export async function sendListEmail(
     text: textBody,
   });
 }
+
+/**
+ * A standalone "does email actually reach you" probe for Settings. Kept
+ * separate from sendListEmail because it must not invent tasks or issue
+ * tokens just to prove the channel works.
+ */
+export async function sendTestEmail(env: Env, to: string): Promise<void> {
+  const htmlBody = html`
+    <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;">
+      <h2 style="color:#1a1a1a;">Test message</h2>
+      <p style="color:#555;font-size:14px;">
+        This is a test from ${env.FROM_NAME}. If you're reading it, to-do lists sent by email will reach you.
+      </p>
+    </div>
+  `;
+
+  await env.EMAIL.send({
+    to,
+    from: { email: env.FROM_EMAIL, name: env.FROM_NAME },
+    subject: `Test message from ${env.FROM_NAME}`,
+    html: htmlBody,
+    text: `This is a test from ${env.FROM_NAME}. If you're reading it, to-do lists sent by email will reach you.`,
+  });
+}

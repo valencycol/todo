@@ -164,6 +164,19 @@
 
   // ---- people -----------------------------------------------------------
 
+  // "fallback" was wrong whenever email IS the channel — the address is
+  // the destination then, not a backup for one.
+  function currentlyLine(person) {
+    const email = esc(person.email);
+    if (person.channel === "telegram") {
+      return "Currently: Telegram only · email fallback " + email;
+    }
+    if (person.channel === "both") {
+      return "Currently: Telegram and email · " + email;
+    }
+    return "Currently: Email only · " + email;
+  }
+
   function channelLabel(person) {
     if (person.channel === "telegram") return "Telegram only";
     if (person.channel === "both") return "Telegram + email";
@@ -246,23 +259,25 @@
       detail +
       '<div class="tg-field">' +
       '<label class="meta" style="margin:0;">Deliver lists by</label>' +
+      '<div class="tg-invite-row">' +
       '<select class="tg-channel">' +
       channelOptions +
       "</select>" +
+      '<button type="button" class="tg-save-channel" disabled>Save</button>' +
+      "</div>" +
       (linked ? "" : '<div class="meta" style="margin:4px 0 0;">Telegram unlocks once they tap Start.</div>') +
       "</div>" +
       '<div class="tg-person-actions">' +
-      (linked ? '<button type="button" class="secondary tg-test">Send test</button>' : "") +
+      // Testing is useful for an email-only person too, not just a linked one.
+      (linked || person.emailEnabled ? '<button type="button" class="secondary tg-test">Send test</button>' : "") +
       (person.handle
         ? '<button type="button" class="secondary destructive tg-forget">' +
           (linked ? "Unlink" : "Remove") +
           "</button>"
         : "") +
       "</div>" +
-      '<div class="meta" style="margin:8px 0 0;">Currently: ' +
-      channelLabel(person) +
-      " · fallback " +
-      esc(person.email) +
+      '<div class="meta" style="margin:8px 0 0;">' +
+      currentlyLine(person) +
       "</div>" +
       "</div>"
     );
@@ -294,20 +309,38 @@
         }
       });
 
-      card.querySelector(".tg-channel").addEventListener("change", async function (e) {
-        const select = e.currentTarget;
+      const channelSelect = card.querySelector(".tg-channel");
+      const saveChannelBtn = card.querySelector(".tg-save-channel");
+
+      // Save is only live once the value differs from what's stored, so
+      // the button can't imply an unsaved change that isn't there.
+      channelSelect.addEventListener("change", function () {
+        saveChannelBtn.disabled = channelSelect.value === person.channel;
+      });
+
+      saveChannelBtn.addEventListener("click", async function (e) {
+        const btn = e.currentTarget;
         const previous = person.channel;
-        select.disabled = true;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
         try {
           state = await api("/api/telegram/channel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ assignee: person.key, channel: select.value }),
+            body: JSON.stringify({ assignee: person.key, channel: channelSelect.value }),
           });
           render();
+          const saved = state.assignees.find(function (a) {
+            return a.key === person.key;
+          });
+          showNote(
+            peopleEl.querySelector('[data-person="' + person.key + '"]'),
+            "✓ Saved — " + person.name + " now receives lists by " + channelLabel(saved).toLowerCase() + ".",
+          );
         } catch (err) {
-          select.value = previous;
-          select.disabled = false;
+          channelSelect.value = previous;
+          btn.disabled = true;
+          btn.removeAttribute("aria-busy");
           showError(card, err.message);
         }
       });
@@ -338,7 +371,7 @@
           btn.disabled = true;
           btn.setAttribute("aria-busy", "true");
           try {
-            await api("/api/telegram/test", {
+            const result = await api("/api/telegram/test", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ assignee: person.key }),
@@ -349,13 +382,11 @@
             // A 2-second label flip was too easy to miss, and it never said
             // where the message went — which matters, because a test for
             // Alvita lands on Alvita's phone, not the sender's.
+            const via = (result.sentVia || []).join(" and ") || "their configured channel";
             showNote(
               card,
-              "✓ Test message sent to " +
-                person.name +
-                "'s Telegram" +
-                (person.telegramUsername ? " (@" + person.telegramUsername + ")" : "") +
-                ". If it hasn't arrived, check they haven't blocked or muted the bot.",
+              "✓ Test sent to " + person.name + " via " + via + "." +
+                (result.problems && result.problems.length ? " " + result.problems.join(" ") : ""),
             );
           } catch (err) {
             btn.disabled = false;

@@ -21,6 +21,8 @@ import {
   tgEscape,
 } from "../lib/telegram";
 import { getPolicy } from "../lib/escalation";
+import { sendTestEmail } from "../lib/email";
+import { getAssignees as listAssignees } from "../lib/assignees";
 
 export const telegramAdminRoutes = new Hono<{ Bindings: Env }>();
 
@@ -162,20 +164,49 @@ telegramAdminRoutes.post("/api/telegram/unlink", async (c) => {
   return c.json({ ok: true, ...(await statusPayload(c.env, c.env.DB)) });
 });
 
+/**
+ * Sends a test through whatever channels this person is actually set to
+ * receive on — not just Telegram. A test that always used Telegram made
+ * the channel picker look broken: switching to "Email only" still made a
+ * Telegram message appear.
+ */
 telegramAdminRoutes.post("/api/telegram/test", async (c) => {
   const body = await c.req.json<{ assignee?: unknown }>().catch(() => ({}) as { assignee?: unknown });
-  const assignee = knownAssignee(c.env, body.assignee);
-  if (!assignee) return c.json({ error: "Unknown person." }, 400);
+  const key = knownAssignee(c.env, body.assignee);
+  if (!key) return c.json({ error: "Unknown person." }, 400);
 
-  const recipient = await getRecipient(c.env.DB, assignee);
-  if (!recipient?.chat_id) return c.json({ error: "Not linked yet." }, 400);
+  const person = listAssignees(c.env).find((a) => a.key === key)!;
+  const recipient = await getRecipient(c.env.DB, key);
+  const channel = recipient?.chat_id ? recipient.channel : "email";
 
-  const sent = await sendMessage(
-    c.env,
-    recipient.chat_id,
-    `🔔 Test message from <b>${tgEscape(c.env.FROM_NAME)}</b>. If you can read this, delivery works.`,
-  );
-  return sent ? c.json({ ok: true }) : c.json({ error: "Telegram didn't accept the message." }, 502);
+  const sentVia: string[] = [];
+  const problems: string[] = [];
+
+  if (channel === "telegram" || channel === "both") {
+    const sent = await sendMessage(
+      c.env,
+      recipient!.chat_id!,
+      `🔔 Test message from <b>${tgEscape(c.env.FROM_NAME)}</b>. If you can read this, Telegram delivery works.`,
+    );
+    if (sent) sentVia.push("Telegram");
+    else problems.push("Telegram didn't accept the message.");
+  }
+
+  if (channel === "email" || channel === "both") {
+    try {
+      await sendTestEmail(c.env, person.email);
+      sentVia.push("email");
+    } catch (err) {
+      console.warn("telegram: test email failed", err);
+      problems.push(`Email to ${person.email} failed — check it's a verified destination address.`);
+    }
+  }
+
+  if (sentVia.length === 0) {
+    return c.json({ error: problems.join(" ") || "Nothing could be sent." }, 502);
+  }
+
+  return c.json({ ok: true, sentVia, problems });
 });
 
 /**
