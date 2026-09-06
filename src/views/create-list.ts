@@ -1,20 +1,36 @@
 import { html, raw } from "../lib/html";
 import { ROOMS, ROOM_ACTIONS, SIMPLE_TASKS, STORE_SUGGESTIONS, roomDisplayName } from "../lib/catalog";
 import { pageShell, topbar } from "./layout";
-import { plusIcon, sendIcon } from "../lib/icons";
-import type { Assignee } from "../lib/assignees";
+import { plusIcon, sendIcon, mailIcon, telegramIcon } from "../lib/icons";
+import type { AssigneeDelivery } from "../lib/recipients";
 
-export function createListPage(assignees: Assignee[]): string {
+/**
+ * How this person's list will actually be delivered. Telegram only counts
+ * once they've linked a chat — configured-but-unlinked still falls back to
+ * email, and the picker shouldn't promise otherwise.
+ */
+function deliveryBadge(a: AssigneeDelivery): { icon: string; label: string } {
+  const channel = a.telegram?.chat_id ? a.telegram.channel : "email";
+  if (channel === "telegram") return { icon: telegramIcon(15), label: "Telegram" };
+  if (channel === "both") return { icon: telegramIcon(15) + mailIcon(15), label: "Telegram and email" };
+  return { icon: mailIcon(15), label: "Email" };
+}
+
+export function createListPage(assignees: AssigneeDelivery[]): string {
   const assigneeOptions = assignees
-    .map(
-      (a, i) => html`
+    .map((a, i) => {
+      const badge = deliveryBadge(a);
+      return html`
         <label class="assignee-option ${a.enabled ? "" : "disabled"}">
           <input type="radio" name="assignee" value="${a.key}" ${i === 0 ? "checked" : ""} ${a.enabled ? "" : "disabled"} />
           <span>${a.name}</span>
-          <span class="assignee-note">${a.enabled ? a.email : "not set up yet"}</span>
+          <span class="assignee-note" title="${a.enabled ? `Delivered by ${badge.label}` : "Not set up yet"}">
+            ${a.enabled ? raw(badge.icon) : "not set up yet"}
+            <span class="sr-only">${a.enabled ? badge.label : ""}</span>
+          </span>
         </label>
-      `,
-    )
+      `;
+    })
     .join("");
 
   const roomActionOptionTags = ROOM_ACTIONS.map((a) => html`<option value="${a.key}">${a.label}</option>`).join("");

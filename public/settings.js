@@ -37,7 +37,18 @@
     return data;
   }
 
+  function showNote(container, message) {
+    const existing = container.querySelector(".tg-note");
+    if (existing) existing.remove();
+    const el = document.createElement("div");
+    el.className = "tg-note";
+    el.textContent = message;
+    container.appendChild(el);
+  }
+
   function showError(container, message) {
+    const stale = container.querySelector(".tg-note");
+    if (stale) stale.remove();
     const existing = container.querySelector(".error-text");
     if (existing) existing.remove();
     const el = document.createElement("div");
@@ -332,12 +343,20 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ assignee: person.key }),
             });
-            btn.textContent = "Sent ✓";
-            setTimeout(function () {
-              btn.textContent = "Send test";
-              btn.disabled = false;
-              btn.removeAttribute("aria-busy");
-            }, 2000);
+            btn.textContent = "Send test";
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+            // A 2-second label flip was too easy to miss, and it never said
+            // where the message went — which matters, because a test for
+            // Alvita lands on Alvita's phone, not the sender's.
+            showNote(
+              card,
+              "✓ Test message sent to " +
+                person.name +
+                "'s Telegram" +
+                (person.telegramUsername ? " (@" + person.telegramUsername + ")" : "") +
+                ". If it hasn't arrived, check they haven't blocked or muted the bot.",
+            );
           } catch (err) {
             btn.disabled = false;
             btn.removeAttribute("aria-busy");
@@ -426,8 +445,7 @@
           String(quiet.endHour).padStart(2, "0") +
           ":00 — nudges due overnight are held until morning."
         : "Quiet hours are off — nudges go out around the clock.") +
-      "</p>" +
-      '<p class="meta">Change these in <code>wrangler.jsonc</code> (NUDGE_HOURS_HIGH, NUDGE_HOURS_MEDIUM, NUDGE_HOURS_LOW, NUDGE_MAX, NUDGE_QUIET_HOURS).</p>';
+      "</p>";
   }
 
   function render(flash) {

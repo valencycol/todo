@@ -50,3 +50,16 @@ export function searchIcon(size = 18): string {
 export function alertIcon(size = 44): string {
   return icon(size, `<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.5" r="0.75" fill="currentColor" stroke="none"/>`);
 }
+
+export function mailIcon(size = 16): string {
+  return icon(size, `<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>`);
+}
+
+/**
+ * Telegram's paper plane. Filled rather than stroked — at 16px the
+ * stroked outline turns to mush, and this reads as the Telegram mark the
+ * way the mail envelope reads as email.
+ */
+export function telegramIcon(size = 16): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M21.7 3.3a1 1 0 0 0-1.05-.17L2.9 10.36a1 1 0 0 0 .07 1.87l4.16 1.35 1.6 5.06a1 1 0 0 0 1.67.4l2.3-2.26 4.13 3.04a1 1 0 0 0 1.57-.6l3.5-14.9a1 1 0 0 0-.2-.92ZM9.5 14.3l-.6 3.1-1.03-3.26 8.4-5.6-6.77 5.76Z"/></svg>`;
+}

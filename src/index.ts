@@ -12,6 +12,7 @@ import { createListPage } from "./views/create-list";
 import { activeListsPage, completedListsPage } from "./views/dashboard";
 import { settingsPage } from "./views/settings";
 import { getAssignees } from "./lib/assignees";
+import { getDeliveryTargets } from "./lib/recipients";
 import { runNudgeSweep } from "./lib/nudge-sweep";
 
 export { BroadcastHub } from "./durable-objects/broadcast-hub";
@@ -47,7 +48,9 @@ app.route("/", adminRoutes);
 app.route("/", telegramWebhookRoutes);
 app.route("/", telegramAdminRoutes);
 
-app.get("/", (c) => c.html(createListPage(getAssignees(c.env))));
+app.get("/", async (c) =>
+  c.html(createListPage(await getDeliveryTargets(c.env.DB, getAssignees(c.env)))),
+);
 app.get("/dashboard", (c) => c.html(activeListsPage()));
 app.get("/dashboard/completed", (c) => c.html(completedListsPage()));
 app.get("/settings", (c) => c.html(settingsPage()));

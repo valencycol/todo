@@ -22,6 +22,8 @@ function sortByPriority(tasks: TaskRow[]): TaskRow[] {
  * itself proves who pressed the button, the payload doesn't need to carry
  * the unguessable task token the email links rely on.
  */
+// "note" is no longer offered as a button, but stays here so taps on
+// messages delivered before it was removed are still handled.
 export type CallbackAction = "done" | "reject" | "note" | "cancel";
 
 const ACTION_PREFIX: Record<CallbackAction, string> = { done: "d", reject: "r", note: "n", cancel: "c" };
@@ -37,13 +39,17 @@ export function parseCallbackData(data: string): { action: CallbackAction; taskI
   return entry ? { action: entry[0], taskId } : null;
 }
 
+/**
+ * Accept and Reject, nothing else. A note can still be attached by
+ * replying to the message, but it isn't a button — rejecting prompts for
+ * one anyway, and accepting shouldn't ask for paperwork.
+ */
 function pendingButtons(task: TaskRow): InlineButton[][] {
   return [
     [
-      { text: "✅ Done", callback_data: callbackData("done", task.id) },
+      { text: "✅ Accept", callback_data: callbackData("done", task.id) },
       { text: "✖️ Reject", callback_data: callbackData("reject", task.id) },
     ],
-    [{ text: "📝 Add a note", callback_data: callbackData("note", task.id) }],
   ];
 }
 
@@ -57,7 +63,7 @@ export function renderTask(task: TaskRow, policy: EscalationPolicy): { text: str
 
   if (task.status !== "pending") {
     const icon = task.status === "done" ? "✅" : "✖️";
-    const word = task.status === "done" ? "Done" : "Rejected";
+    const word = task.status === "done" ? "Accepted" : "Rejected";
     const when = task.completed_at ? formatDate(task.completed_at) : formatDate(Date.now());
     const lines = [`${icon} <s>${label}</s>`, `<i>${word} · ${tgEscape(when)}</i>`];
     if (task.remarks) lines.push("", `📝 ${tgEscape(task.remarks)}`);
@@ -175,7 +181,7 @@ export async function sendNudge(env: Env, task: TaskRow, nudgeNumber: number, no
     replyToMessageId: task.tg_message_id,
     buttons: [
       [
-        { text: "✅ Done", callback_data: callbackData("done", task.id) },
+        { text: "✅ Accept", callback_data: callbackData("done", task.id) },
         { text: "✖️ Reject", callback_data: callbackData("reject", task.id) },
       ],
     ],

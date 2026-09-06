@@ -314,7 +314,13 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
   if (parsed.action === "cancel") {
     await setRejectPrompt(db, task.id, null);
     await answerCallback(env, query.id, "Rejection cancelled.");
-    await editMessage(env, chatId, source.message_id, "Rejection cancelled — the task is still open.", []);
+    await editMessage(
+      env,
+      chatId,
+      source.message_id,
+      "✖️ <i>Rejection cancelled — the task is still open.</i>",
+      [],
+    );
     return;
   }
 
@@ -327,7 +333,7 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
   }
 
   if (task.status !== "pending") {
-    await answerCallback(env, query.id, `Already ${task.status}.`);
+    await answerCallback(env, query.id, task.status === "done" ? "Already accepted." : "Already rejected.");
     await syncTaskMessage(env, db, task.id);
     return;
   }
@@ -343,7 +349,7 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
       `✖️ <b>Why are you rejecting this?</b>\n${tgEscape(task.label)}\n\n<i>Reply to this message with the reason.</i>`,
       {
         replyToMessageId: task.tg_message_id ?? undefined,
-        buttons: [[{ text: "Cancel", callback_data: callbackData("cancel", task.id) }]],
+        buttons: [[{ text: "✖️ Cancel rejection", callback_data: callbackData("cancel", task.id) }]],
       },
     );
     if (prompt) await setRejectPrompt(db, task.id, prompt.message_id);
@@ -352,7 +358,7 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
 
   await resolveTask(db, task.id, "done", task.remarks);
   await setRejectPrompt(db, task.id, null);
-  await answerCallback(env, query.id, "✅ Marked done");
+  await answerCallback(env, query.id, "✅ Accepted");
   await syncTaskMessage(env, db, task.id);
   await broadcast(env, { type: "task_resolved" });
 }
