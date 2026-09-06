@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { getTaskByToken, isTaskLinkValid, resolveTask } from "../lib/db";
 import { taskLinkPage, taskLinkInvalidPage } from "../views/task-link";
 import { broadcast } from "../lib/hub";
+import { syncTaskMessage } from "../lib/telegram-tasks";
 
 export const taskLinkRoutes = new Hono<{ Bindings: Env }>();
 
@@ -26,6 +27,9 @@ taskLinkRoutes.post("/t/:token/resolve", async (c) => {
   const remarks = String(body.remarks ?? "").trim().slice(0, 1000) || null;
 
   await resolveTask(c.env.DB, task.id, outcome, remarks);
+  // Keep the Telegram copy honest: a task resolved from the web link must
+  // stop offering live buttons in the chat.
+  await syncTaskMessage(c.env, c.env.DB, task.id);
   await broadcast(c.env, { type: "task_resolved" });
 
   return c.json({ ok: true, outcome });

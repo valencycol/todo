@@ -9,7 +9,7 @@ import {
   type ListWithTasks,
   type TaskRow,
 } from "../lib/db";
-import { sendListEmail } from "../lib/email";
+import { deliverList, deliveryFailed } from "../lib/notify";
 import { broadcast } from "../lib/hub";
 import { getAssignees, resolveAssignee } from "../lib/assignees";
 
@@ -36,10 +36,21 @@ listsRoutes.post("/api/lists", async (c) => {
 
   const assignee = resolveAssignee(c.env, body?.assignee);
   const { tasks } = await createListWithTasks(c.env.DB, resolved, assignee.key);
-  await sendListEmail(c.env, tasks, { to: assignee.email });
+  const delivery = await deliverList(c.env, c.env.DB, assignee, tasks);
   await broadcast(c.env, { type: "list_created" });
 
-  return c.json({ ok: true, taskCount: tasks.length });
+  if (deliveryFailed(delivery)) {
+    // The list is already in D1 and visible on the dashboard — say so
+    // plainly rather than reporting a clean send that never happened.
+    return c.json({ error: `Saved, but nothing could be delivered. ${delivery.problems.join(" ")}`.trim() }, 502);
+  }
+
+  return c.json({
+    ok: true,
+    taskCount: tasks.length,
+    channel: delivery.telegram ? (delivery.email ? "both" : "telegram") : "email",
+    problems: delivery.problems,
+  });
 });
 
 listsRoutes.post("/api/lists/:id/resend", async (c) => {
@@ -51,8 +62,18 @@ listsRoutes.post("/api/lists/:id/resend", async (c) => {
   }
 
   const assignee = resolveAssignee(c.env, list.assignee);
-  await sendListEmail(c.env, tasks, { reminder: true, to: assignee.email });
-  return c.json({ ok: true, taskCount: tasks.length });
+  const delivery = await deliverList(c.env, c.env.DB, assignee, tasks, { reminder: true });
+
+  if (deliveryFailed(delivery)) {
+    return c.json({ error: `Couldn't resend. ${delivery.problems.join(" ")}`.trim() }, 502);
+  }
+
+  return c.json({
+    ok: true,
+    taskCount: tasks.length,
+    channel: delivery.telegram ? (delivery.email ? "both" : "telegram") : "email",
+    problems: delivery.problems,
+  });
 });
 
 listsRoutes.get("/api/lists/active", async (c) => {

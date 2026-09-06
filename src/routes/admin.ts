@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { updateTask, deleteTask, type TaskStatus } from "../lib/db";
 import { broadcast } from "../lib/hub";
+import { syncTaskMessage } from "../lib/telegram-tasks";
 import { isSuperuserRequest } from "./superuser";
 
 export const adminRoutes = new Hono<{ Bindings: Env }>();
@@ -36,6 +37,9 @@ adminRoutes.patch("/api/tasks/:id", async (c) => {
   const ok = await updateTask(c.env.DB, c.req.param("id"), update);
   if (!ok) return c.json({ error: "Task not found." }, 404);
 
+  // A superuser edit can move a task in either direction (including back
+  // to pending), so re-render rather than assume it's now resolved.
+  await syncTaskMessage(c.env, c.env.DB, c.req.param("id"));
   await broadcast(c.env, { type: "task_edited" });
   return c.json({ ok: true });
 });

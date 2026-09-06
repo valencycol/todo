@@ -1,7 +1,7 @@
 import { html, raw } from "../lib/html";
 import { houseIcon } from "../lib/icons";
 
-export type NavPage = "create" | "active" | "completed";
+export type NavPage = "create" | "active" | "completed" | "settings";
 
 /**
  * Bump this on every change to a file under /public. Static assets are
@@ -11,7 +11,7 @@ export type NavPage = "create" | "active" | "completed";
  * key so an old cached script can never silently keep calling a route
  * that a later deploy removed.
  */
-const ASSET_VERSION = "21";
+const ASSET_VERSION = "22";
 
 export function topbar(active: NavPage): string {
   return html`
@@ -23,6 +23,7 @@ export function topbar(active: NavPage): string {
       <nav>
         <a href="/dashboard" class="${active === "active" ? "active" : ""}">Active</a>
         <a href="/dashboard/completed" class="${active === "completed" ? "active" : ""}">Completed</a>
+        <a href="/settings" class="${active === "settings" ? "active" : ""}">Settings</a>
         <button type="button" class="nav-link-btn" id="nav-logout-btn">Log out</button>
       </nav>
     </header>

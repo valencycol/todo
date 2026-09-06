@@ -849,3 +849,84 @@ button.destructive:hover { background: var(--red-bg); }
 .task-edit-form .edit-remarks { min-height: 56px; }
 .task-edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .task-edit-actions button { min-height: 34px; padding: 6px 14px; font-size: 13px; }
+
+/* ---- Settings: Telegram ---- */
+
+.tg-bot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tg-bot-name { font-weight: 700; font-size: 15px; }
+
+.tg-warn { font-size: 14px; margin: 0 0 10px; }
+
+.tg-code {
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  overflow-x: auto;
+  margin: 0 0 8px;
+}
+
+.tg-person {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  background: #fbfcfe;
+}
+
+.tg-person:last-child { margin-bottom: 0; }
+
+.tg-person-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.tg-field { margin-bottom: var(--space-3); }
+.tg-field > label { display: block; margin-bottom: 4px; }
+
+/* The handle input and its Save button share a row; on a narrow phone the
+   button wraps underneath rather than squeezing the input to nothing. */
+.tg-invite-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tg-invite-row input { flex: 1 1 200px; min-width: 0; }
+.tg-invite-row button { flex-shrink: 0; }
+
+.tg-connected { margin: 0 0 var(--space-3); }
+
+.tg-invite { margin-bottom: var(--space-3); }
+.tg-invite input { font-size: 13px; color: var(--color-muted-foreground); }
+
+.tg-person-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tg-person-actions button { font-size: 13px; padding: 8px 14px; min-height: 36px; }
+
+.tg-nudge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.tg-nudge-row:last-of-type { border-bottom: none; }
+
+.tg-nudge-row strong { font-variant-numeric: tabular-nums; }

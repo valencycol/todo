@@ -14,6 +14,11 @@ export interface TaskRow {
   remarks: string | null;
   priority: TaskPriority;
   created_at: number;
+  // Telegram delivery bookkeeping — null for tasks sent by email only.
+  tg_chat_id: string | null;
+  tg_message_id: number | null;
+  nudge_count: number;
+  nudge_last_at: number | null;
 }
 
 export interface ListRow {
@@ -69,6 +74,10 @@ export async function createListWithTasks(
     remarks: null,
     priority: item.priority,
     created_at: now,
+    tg_chat_id: null,
+    tg_message_id: null,
+    nudge_count: 0,
+    nudge_last_at: null,
   }));
 
   for (const task of tasks) {
@@ -415,4 +424,61 @@ export async function recordFailedLogin(db: D1Database, ip: string): Promise<voi
 
 export async function resetLoginAttempts(db: D1Database, ip: string): Promise<void> {
   await db.prepare("DELETE FROM login_attempts WHERE ip = ?").bind(ip).run();
+}
+
+export async function getTaskById(db: D1Database, taskId: string): Promise<TaskRow | null> {
+  const row = await db.prepare("SELECT * FROM tasks WHERE id = ?").bind(taskId).first<TaskRow>();
+  return row ?? null;
+}
+
+/**
+ * Records which Telegram message now carries a task, so later state
+ * changes can edit that exact message instead of posting a second one.
+ * Re-sending a task (a reminder) points it at the new message and resets
+ * the nudge counter — the clock restarts from the fresh reminder.
+ */
+export async function setTaskTelegramMessage(
+  db: D1Database,
+  taskId: string,
+  chatId: string,
+  messageId: number,
+): Promise<void> {
+  await db
+    .prepare("UPDATE tasks SET tg_chat_id = ?, tg_message_id = ?, nudge_count = 0, nudge_last_at = ? WHERE id = ?")
+    .bind(chatId, messageId, Date.now(), taskId)
+    .run();
+}
+
+/**
+ * Every still-pending task that was delivered over Telegram. Bounded by
+ * open work (the same set the Active dashboard shows), so the overdue
+ * sweep never scans history.
+ */
+export async function getPendingTelegramTasks(db: D1Database): Promise<TaskRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM tasks WHERE status = 'pending' AND tg_chat_id IS NOT NULL ORDER BY created_at ASC")
+    .all<TaskRow>();
+  return results;
+}
+
+export async function recordNudge(db: D1Database, taskId: string, at: number): Promise<void> {
+  await db
+    .prepare("UPDATE tasks SET nudge_count = nudge_count + 1, nudge_last_at = ? WHERE id = ?")
+    .bind(at, taskId)
+    .run();
+}
+
+/** Attaches a note to a task without touching its status. */
+export async function setTaskRemarks(db: D1Database, taskId: string, remarks: string | null): Promise<boolean> {
+  const result = await db.prepare("UPDATE tasks SET remarks = ? WHERE id = ?").bind(remarks, taskId).run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/** The still-open tasks a Telegram chat can act on right now, newest list first. */
+export async function getOpenTasksForChat(db: D1Database, chatId: string): Promise<TaskRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM tasks WHERE status = 'pending' AND tg_chat_id = ? ORDER BY created_at ASC")
+    .bind(chatId)
+    .all<TaskRow>();
+  return results;
 }
