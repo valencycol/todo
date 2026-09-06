@@ -150,13 +150,20 @@
       entries.push({ item: { type: el.dataset.simple }, label });
     });
 
+    // The whole supermarket run is one task, not one per item — a shopping
+    // trip is a single errand, and splitting it buried everything else on
+    // the list under a wall of one-line tasks.
+    const shoppingItems = [];
     shoppingRowsWrap.querySelectorAll(".shopping-row").forEach((row) => {
       const item = row.querySelector(".shopping-item").value.trim();
       if (!item) return;
       const qty = row.querySelector(".shopping-qty").value.trim();
-      const text = qty ? `${item} × ${qty}` : item;
-      entries.push({ item: { type: "supermarket_item", text }, label: `Pick up from the supermarket: ${text}` });
+      shoppingItems.push(qty ? `${item} × ${qty}` : item);
     });
+    if (shoppingItems.length) {
+      const text = shoppingItems.join(", ");
+      entries.push({ item: { type: "supermarket_item", text }, label: `Pick up from the supermarket: ${text}` });
+    }
 
     storeRowsWrap.querySelectorAll(".store-row").forEach((row) => {
       const select = row.querySelector(".store-select");

@@ -13,7 +13,6 @@ import { activeListsPage, completedListsPage } from "./views/dashboard";
 import { settingsPage } from "./views/settings";
 import { getAssignees } from "./lib/assignees";
 import { getDeliveryTargets } from "./lib/recipients";
-import { runNudgeSweep } from "./lib/nudge-sweep";
 
 export { BroadcastHub } from "./durable-objects/broadcast-hub";
 
@@ -57,23 +56,4 @@ app.get("/settings", (c) => c.html(settingsPage()));
 
 export default {
   fetch: app.fetch,
-
-  /**
-   * Overdue sweep (see wrangler.jsonc `triggers.crons`). Errors are logged
-   * rather than thrown: a failing sweep must not mark the cron unhealthy
-   * and stop later runs, since the next one recovers on its own.
-   */
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(
-      runNudgeSweep(env, env.DB)
-        .then((result) => {
-          if (result.nudged > 0 || result.heldForQuietHours > 0) {
-            console.log(
-              `nudge sweep: ${result.nudged} sent, ${result.heldForQuietHours} held for quiet hours, ${result.scanned} scanned`,
-            );
-          }
-        })
-        .catch((err) => console.error("nudge sweep failed", err)),
-    );
-  },
 } satisfies ExportedHandler<Env>;

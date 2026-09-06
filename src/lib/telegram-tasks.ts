@@ -1,7 +1,6 @@
 import type { TaskPriority, TaskRow } from "./db";
 import { getTaskById, setTaskTelegramMessage } from "./db";
 import { formatDate } from "./date";
-import { describeThreshold, formatOverdue, getPolicy, type EscalationPolicy } from "./escalation";
 import { editMessage, sendMessage, tgEscape, type InlineButton } from "./telegram";
 
 const PRIORITY_DOT: Record<TaskPriority, string> = { high: "🔴", medium: "🟡", low: "🟢" };
@@ -58,7 +57,7 @@ function pendingButtons(task: TaskRow): InlineButton[][] {
  * first send and for every in-place edit afterwards, so a message can
  * never disagree with D1 no matter which surface changed the task.
  */
-export function renderTask(task: TaskRow, policy: EscalationPolicy): { text: string; buttons: InlineButton[][] } {
+export function renderTask(task: TaskRow): { text: string; buttons: InlineButton[][] } {
   const label = tgEscape(task.label);
 
   if (task.status !== "pending") {
@@ -75,7 +74,6 @@ export function renderTask(task: TaskRow, policy: EscalationPolicy): { text: str
     `<i>${PRIORITY_WORD[task.priority]} priority · sent ${tgEscape(formatDate(task.created_at))}</i>`,
   ];
   if (task.remarks) lines.push("", `📝 ${tgEscape(task.remarks)}`);
-  lines.push("", `<i>Nudges after ${describeThreshold(policy, task.priority)} if it's still open.</i>`);
 
   return { text: lines.join("\n"), buttons: pendingButtons(task) };
 }
@@ -112,7 +110,6 @@ export async function sendListToTelegram(
   tasks: TaskRow[],
   opts: { reminder?: boolean } = {},
 ): Promise<{ sent: number }> {
-  const policy = getPolicy(env);
   const sorted = sortByPriority(tasks);
 
   await sendMessage(env, chatId, listHeader(sorted, Boolean(opts.reminder)));
@@ -131,7 +128,7 @@ export async function sendListToTelegram(
       );
     }
 
-    const { text, buttons } = renderTask(task, policy);
+    const { text, buttons } = renderTask(task);
     const message = await sendMessage(env, chatId, text, { buttons, silent: true });
     if (message) {
       await setTaskTelegramMessage(db, task.id, chatId, message.message_id);
@@ -151,41 +148,6 @@ export async function syncTaskMessage(env: Env, db: D1Database, taskId: string):
   const task = await getTaskById(db, taskId);
   if (!task || !task.tg_chat_id || !task.tg_message_id) return;
 
-  const { text, buttons } = renderTask(task, getPolicy(env));
+  const { text, buttons } = renderTask(task);
   await editMessage(env, task.tg_chat_id, task.tg_message_id, text, buttons);
-}
-
-/**
- * The overdue chase. Posts as a reply to the task's own message so the
- * chat keeps the thread together, and escalates its wording each time.
- */
-export async function sendNudge(env: Env, task: TaskRow, nudgeNumber: number, now: number): Promise<boolean> {
-  if (!task.tg_chat_id || !task.tg_message_id) return false;
-
-  const overdue = formatOverdue(now - task.created_at);
-  const heading =
-    nudgeNumber === 1
-      ? `⏰ <b>Still open</b> — ${tgEscape(overdue)} since this was sent.`
-      : nudgeNumber === 2
-        ? `⚠️ <b>Still not done</b> — ${tgEscape(overdue)} and counting.`
-        : `🚨 <b>Last reminder</b> — open for ${tgEscape(overdue)}.`;
-
-  const text = [
-    heading,
-    `${PRIORITY_DOT[task.priority]} ${tgEscape(task.label)}`,
-    "",
-    "<i>Use the buttons on the original message above.</i>",
-  ].join("\n");
-
-  const message = await sendMessage(env, task.tg_chat_id, text, {
-    replyToMessageId: task.tg_message_id,
-    buttons: [
-      [
-        { text: "✅ Accept", callback_data: callbackData("done", task.id) },
-        { text: "✖️ Reject", callback_data: callbackData("reject", task.id) },
-      ],
-    ],
-  });
-
-  return message !== null;
 }

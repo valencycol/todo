@@ -17,8 +17,6 @@ export interface TaskRow {
   // Telegram delivery bookkeeping — null for tasks sent by email only.
   tg_chat_id: string | null;
   tg_message_id: number | null;
-  nudge_count: number;
-  nudge_last_at: number | null;
   // Set while a Telegram rejection is waiting on its reason; NULL otherwise.
   tg_reject_prompt_id: number | null;
 }
@@ -78,8 +76,6 @@ export async function createListWithTasks(
     created_at: now,
     tg_chat_id: null,
     tg_message_id: null,
-    nudge_count: 0,
-    nudge_last_at: null,
     tg_reject_prompt_id: null,
   }));
 
@@ -437,8 +433,7 @@ export async function getTaskById(db: D1Database, taskId: string): Promise<TaskR
 /**
  * Records which Telegram message now carries a task, so later state
  * changes can edit that exact message instead of posting a second one.
- * Re-sending a task (a reminder) points it at the new message and resets
- * the nudge counter — the clock restarts from the fresh reminder.
+ * Re-sending a task (a reminder) simply points it at the new message.
  */
 export async function setTaskTelegramMessage(
   db: D1Database,
@@ -447,27 +442,8 @@ export async function setTaskTelegramMessage(
   messageId: number,
 ): Promise<void> {
   await db
-    .prepare("UPDATE tasks SET tg_chat_id = ?, tg_message_id = ?, nudge_count = 0, nudge_last_at = ? WHERE id = ?")
-    .bind(chatId, messageId, Date.now(), taskId)
-    .run();
-}
-
-/**
- * Every still-pending task that was delivered over Telegram. Bounded by
- * open work (the same set the Active dashboard shows), so the overdue
- * sweep never scans history.
- */
-export async function getPendingTelegramTasks(db: D1Database): Promise<TaskRow[]> {
-  const { results } = await db
-    .prepare("SELECT * FROM tasks WHERE status = 'pending' AND tg_chat_id IS NOT NULL ORDER BY created_at ASC")
-    .all<TaskRow>();
-  return results;
-}
-
-export async function recordNudge(db: D1Database, taskId: string, at: number): Promise<void> {
-  await db
-    .prepare("UPDATE tasks SET nudge_count = nudge_count + 1, nudge_last_at = ? WHERE id = ?")
-    .bind(at, taskId)
+    .prepare("UPDATE tasks SET tg_chat_id = ?, tg_message_id = ? WHERE id = ?")
+    .bind(chatId, messageId, taskId)
     .run();
 }
 

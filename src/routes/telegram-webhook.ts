@@ -19,7 +19,6 @@ import {
 } from "../lib/recipients";
 import { answerCallback, editMessage, sendMessage, tgEscape } from "../lib/telegram";
 import { callbackData, parseCallbackData, renderTask, syncTaskMessage } from "../lib/telegram-tasks";
-import { getPolicy } from "../lib/escalation";
 
 export const telegramWebhookRoutes = new Hono<{ Bindings: Env }>();
 
@@ -174,10 +173,9 @@ async function handleOpen(env: Env, db: D1Database, chatId: string): Promise<voi
     return;
   }
 
-  const policy = getPolicy(env);
   await sendMessage(env, chatId, `<b>${tasks.length} still open</b>`);
   for (const task of tasks) {
-    const { text, buttons } = renderTask(task, policy);
+    const { text, buttons } = renderTask(task);
     await sendMessage(env, chatId, text, { buttons, silent: true });
   }
 }
@@ -267,7 +265,6 @@ async function handleMessage(env: Env, db: D1Database, message: TgMessage): Prom
         "<b>What I can do</b>",
         "",
         "• Send you each to-do task with <b>Done</b> / <b>Reject</b> buttons",
-        "• Nudge you when something stays open too long",
         "• Save a note if you reply to a task's message",
         "",
         "/open — list what's still open",

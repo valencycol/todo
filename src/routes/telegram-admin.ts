@@ -20,7 +20,6 @@ import {
   setWebhook,
   tgEscape,
 } from "../lib/telegram";
-import { getPolicy } from "../lib/escalation";
 import { sendTestEmail } from "../lib/email";
 import { getAssignees as listAssignees } from "../lib/assignees";
 
@@ -72,7 +71,6 @@ async function webhookHealth(env: Env, expectedUrl: string) {
 
 async function statusPayload(env: Env, db: D1Database) {
   const bot = await botUsername(env, db);
-  const policy = getPolicy(env);
 
   const assignees = await Promise.all(
     getAssignees(env).map(async (assignee) => {
@@ -101,7 +99,6 @@ async function statusPayload(env: Env, db: D1Database) {
     botUsername: bot,
     webhookUrl,
     webhook: await webhookHealth(env, webhookUrl),
-    nudges: { hours: policy.hours, maxNudges: policy.maxNudges, quiet: policy.quiet },
     assignees,
   };
 }

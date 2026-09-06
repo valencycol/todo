@@ -3,7 +3,7 @@
 A household to-do list on Cloudflare Workers. Lists are created in the web
 app and delivered to the assigned person by **email**, **Telegram**, or both.
 Telegram tasks carry Done / Reject buttons that resolve straight from the
-notification, and anything left open too long gets chased automatically.
+notification.
 
 - **Stack** — Cloudflare Workers + Hono, D1 (SQLite), a Durable Object for
   live dashboard updates, Cloudflare Email Sending, Telegram Bot API.
@@ -86,7 +86,7 @@ by hand.
 ## Setting up Telegram (optional)
 
 Email works without any of this. Telegram adds resolve-from-the-notification
-buttons and overdue nudges.
+buttons.
 
 ### 1. Create the bot
 
@@ -124,25 +124,6 @@ instead tap **Share my number** in the chat.
 
 Once linked, switch their **Deliver lists by** to Telegram, and use
 **Send test** to confirm before trusting it with a real list.
-
----
-
-## Overdue nudges
-
-If a task is still open after its priority's threshold, the bot chases it,
-repeating at the same interval up to `NUDGE_MAX` times. Driven by a cron
-trigger (`*/10 * * * *`) declared in `wrangler.jsonc`.
-
-| Var | Default | Meaning |
-| --- | --- | --- |
-| `NUDGE_HOURS_HIGH` | `2` | Hours before a high-priority task is chased |
-| `NUDGE_HOURS_MEDIUM` | `4` | Same, medium priority |
-| `NUDGE_HOURS_LOW` | `6` | Same, low priority |
-| `NUDGE_MAX` | `3` | Total nudges per task, then it stops |
-| `NUDGE_QUIET_HOURS` | `22-7` | Local night (Europe/Stockholm); `off` to disable |
-
-Nudges falling in quiet hours are held until the window closes rather than
-consumed, so nothing is silently skipped overnight.
 
 ---
 

@@ -6,7 +6,7 @@ export function settingsPage(): string {
     ${raw(topbar("settings"))}
     <main data-page-mode="settings">
       <h1 class="page-title">Settings</h1>
-      <p class="page-subtitle">Where to-do lists get delivered, and when to chase them up.</p>
+      <p class="page-subtitle">Where to-do lists get delivered.</p>
 
       <div class="card">
         <h3>Telegram</h3>
@@ -21,11 +21,6 @@ export function settingsPage(): string {
           in Telegram with Done and Reject buttons.
         </p>
         <div id="tg-people"><p class="empty-state">Loading…</p></div>
-      </div>
-
-      <div class="card">
-        <h3>Overdue nudges</h3>
-        <div id="tg-nudges"><p class="empty-state">Loading…</p></div>
       </div>
     </main>
   `;

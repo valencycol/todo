@@ -72,7 +72,7 @@ export function createListPage(assignees: AssigneeDelivery[]): string {
     ${raw(topbar("create"))}
     <main>
       <h2 class="page-title">Build a list for the house</h2>
-      <p class="page-subtitle">Pick everything that needs doing — each item becomes its own task with its own link.</p>
+      <p class="page-subtitle">Pick everything that needs doing — each item becomes its own task with its own link, and the whole shopping list counts as one.</p>
 
       <form id="list-form">
         <div class="card">
@@ -92,6 +92,7 @@ export function createListPage(assignees: AssigneeDelivery[]): string {
 
         <div class="card">
           <h3>Shopping list</h3>
+          <p class="meta">Everything here goes out as one task — "Pick up from the supermarket: …".</p>
           <div id="shopping-rows">
             <div class="shopping-row">
               <input type="text" class="shopping-item" placeholder="e.g. milk" />

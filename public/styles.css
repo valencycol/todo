@@ -944,19 +944,6 @@ button.destructive:hover { background: var(--red-bg); }
 
 .tg-person-actions button { font-size: 13px; padding: 8px 14px; min-height: 36px; }
 
-.tg-nudge-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
-}
-
-.tg-nudge-row:last-of-type { border-bottom: none; }
-
-.tg-nudge-row strong { font-variant-numeric: tabular-nums; }
-
 /* Live webhook health. The dot carries the state at a glance; the tone
    classes only ever change colour, never layout, so the card doesn't jump
    as the status changes. */

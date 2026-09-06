@@ -1,11 +1,10 @@
-// Telegram delivery settings: bot health, per-person handles + linking,
-// and the overdue-nudge schedule. Everything re-renders from the single
-// /api/telegram payload so the page can never show a half-applied state.
+// Telegram delivery settings: bot health and per-person handles + linking.
+// Everything re-renders from the single /api/telegram payload so the page
+// can never show a half-applied state.
 (function () {
   const statusEl = document.getElementById("tg-status");
   const peopleEl = document.getElementById("tg-people");
-  const nudgesEl = document.getElementById("tg-nudges");
-  if (!statusEl || !peopleEl || !nudgesEl) return;
+  if (!statusEl || !peopleEl) return;
 
   let state = null;
 
@@ -439,50 +438,9 @@
     });
   }
 
-  // ---- nudges -----------------------------------------------------------
-
-  function renderNudges() {
-    const hours = state.nudges.hours;
-    const quiet = state.nudges.quiet;
-    const rows = [
-      { dot: "🔴", label: "High priority", hours: hours.high },
-      { dot: "🟡", label: "Medium priority", hours: hours.medium },
-      { dot: "🟢", label: "Low priority", hours: hours.low },
-    ]
-      .map(function (row) {
-        return (
-          '<div class="tg-nudge-row"><span>' +
-          row.dot +
-          " " +
-          row.label +
-          "</span><strong>" +
-          row.hours +
-          (row.hours === 1 ? " hour" : " hours") +
-          "</strong></div>"
-        );
-      })
-      .join("");
-
-    nudgesEl.innerHTML =
-      '<p class="meta">If a task is still open after this long, Telegram chases it — repeating at the same interval up to ' +
-      state.nudges.maxNudges +
-      " times.</p>" +
-      rows +
-      '<p class="meta" style="margin-top:12px;">' +
-      (quiet
-        ? "Quiet hours " +
-          String(quiet.startHour).padStart(2, "0") +
-          ":00–" +
-          String(quiet.endHour).padStart(2, "0") +
-          ":00 — nudges due overnight are held until morning."
-        : "Quiet hours are off — nudges go out around the clock.") +
-      "</p>";
-  }
-
   function render(flash) {
     renderStatus(flash);
     renderPeople();
-    renderNudges();
   }
 
   api("/api/telegram")
@@ -496,7 +454,6 @@
         esc(err.message) +
         '</p><button type="button" id="tg-retry" class="secondary">Try again</button>';
       peopleEl.innerHTML = '<p class="empty-state">Unavailable until settings load.</p>';
-      nudgesEl.innerHTML = "";
       document.getElementById("tg-retry").addEventListener("click", function () {
         location.reload();
       });

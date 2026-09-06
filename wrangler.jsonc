@@ -25,13 +25,6 @@
     }
   ],
 
-  // Overdue sweep. Every 10 minutes is well under the tightest nudge
-  // threshold (2h for high priority), so a nudge lands within ~10 minutes
-  // of coming due without the cron itself doing meaningful work most runs.
-  "triggers": {
-    "crons": ["*/10 * * * *"]
-  },
-
   "durable_objects": {
     "bindings": [
       { "name": "BROADCAST_HUB", "class_name": "BroadcastHub" }
@@ -66,20 +59,6 @@
     //   wrangler email routing addresses create alvitagomes16@gmail.com
     // (then she has to click the verification email it sends). Until then
     // her option in the "Send to" picker stays greyed out.
-    "ALVITA_ENABLED": "true",
-
-    // How long a pending task may sit before Telegram starts nudging,
-    // per priority. Household rule: high 2h, medium 4h, low 6h.
-    "NUDGE_HOURS_HIGH": "2",
-    "NUDGE_HOURS_MEDIUM": "4",
-    "NUDGE_HOURS_LOW": "6",
-
-    // Nudges repeat at the same interval and then stop, so a task nobody
-    // ever resolves can't buzz someone's phone indefinitely.
-    "NUDGE_MAX": "3",
-
-    // Local-night window (Europe/Stockholm) where nudges are held until
-    // morning. Set to "off" to nudge around the clock.
-    "NUDGE_QUIET_HOURS": "22-7"
+    "ALVITA_ENABLED": "true"
   }
 }
