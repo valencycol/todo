@@ -22,9 +22,9 @@ function sortByPriority(tasks: TaskRow[]): TaskRow[] {
  * itself proves who pressed the button, the payload doesn't need to carry
  * the unguessable task token the email links rely on.
  */
-export type CallbackAction = "done" | "reject" | "note";
+export type CallbackAction = "done" | "reject" | "note" | "cancel";
 
-const ACTION_PREFIX: Record<CallbackAction, string> = { done: "d", reject: "r", note: "n" };
+const ACTION_PREFIX: Record<CallbackAction, string> = { done: "d", reject: "r", note: "n", cancel: "c" };
 
 export function callbackData(action: CallbackAction, taskId: string): string {
   return `${ACTION_PREFIX[action]}:${taskId}`;

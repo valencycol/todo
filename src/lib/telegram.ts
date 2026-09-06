@@ -114,14 +114,45 @@ export async function answerCallback(env: Env, callbackQueryId: string, text?: s
   });
 }
 
-export async function setWebhook(env: Env, url: string, secret: string): Promise<{ ok: boolean; error?: string }> {
+/**
+ * `dropPending` discards whatever Telegram has queued but not yet
+ * delivered. That's right for a first registration (stale test updates
+ * shouldn't replay) and wrong for a re-registration, where the queue is
+ * real traffic — a button press caught mid-click would be thrown away.
+ * Callers decide based on whether a webhook already exists.
+ */
+export async function setWebhook(
+  env: Env,
+  url: string,
+  secret: string,
+  dropPending: boolean,
+): Promise<{ ok: boolean; error?: string }> {
   const result = await call<boolean>(env, "setWebhook", {
     url,
     secret_token: secret,
     allowed_updates: ["message", "callback_query"],
-    drop_pending_updates: true,
+    drop_pending_updates: dropPending,
   });
   return result === true ? { ok: true } : { ok: false, error: "Telegram rejected the webhook registration." };
+}
+
+export interface WebhookInfo {
+  url: string;
+  pending_update_date?: number;
+  pending_update_count: number;
+  last_error_date?: number;
+  last_error_message?: string;
+  ip_address?: string;
+}
+
+/**
+ * What Telegram thinks the webhook is, as opposed to what we last asked
+ * for. This is the only way to see delivery failures — Telegram reports
+ * them here rather than to us, so a bot that has silently stopped working
+ * looks identical to a healthy one without it.
+ */
+export async function getWebhookInfo(env: Env): Promise<WebhookInfo | null> {
+  return call<WebhookInfo>(env, "getWebhookInfo", {});
 }
 
 export interface BotInfo {

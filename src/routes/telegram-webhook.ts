@@ -1,5 +1,12 @@
 import { Hono } from "hono";
-import { getTaskById, resolveTask, setTaskRemarks, getOpenTasksForChat } from "../lib/db";
+import {
+  getTaskById,
+  getTaskByRejectPrompt,
+  resolveTask,
+  setRejectPrompt,
+  setTaskRemarks,
+  getOpenTasksForChat,
+} from "../lib/db";
 import { broadcast } from "../lib/hub";
 import { getAssignees } from "../lib/assignees";
 import {
@@ -10,8 +17,8 @@ import {
   phoneDigits,
   type TelegramRecipient,
 } from "../lib/recipients";
-import { answerCallback, sendMessage, tgEscape } from "../lib/telegram";
-import { parseCallbackData, renderTask, syncTaskMessage } from "../lib/telegram-tasks";
+import { answerCallback, editMessage, sendMessage, tgEscape } from "../lib/telegram";
+import { callbackData, parseCallbackData, renderTask, syncTaskMessage } from "../lib/telegram-tasks";
 import { getPolicy } from "../lib/escalation";
 
 export const telegramWebhookRoutes = new Hono<{ Bindings: Env }>();
@@ -185,6 +192,28 @@ async function handleReply(env: Env, db: D1Database, message: TgMessage, chatId:
   const text = message.text?.trim();
   if (!repliedTo || !text) return false;
 
+  // A reply to a rejection prompt is the reason — this is what actually
+  // resolves the task, since pressing Reject only asked the question.
+  const awaiting = await getTaskByRejectPrompt(db, chatId, repliedTo);
+  if (awaiting) {
+    if (awaiting.status !== "pending") {
+      await setRejectPrompt(db, awaiting.id, null);
+      await sendMessage(env, chatId, "That task was already resolved.", {
+        replyToMessageId: message.message_id,
+      });
+      return true;
+    }
+
+    await resolveTask(db, awaiting.id, "rejected", text.slice(0, 1000));
+    await setRejectPrompt(db, awaiting.id, null);
+    await syncTaskMessage(env, db, awaiting.id);
+    await broadcast(env, { type: "task_resolved" });
+    await sendMessage(env, chatId, `✖️ Rejected <b>${tgEscape(awaiting.label)}</b>.`, {
+      replyToMessageId: message.message_id,
+    });
+    return true;
+  }
+
   const task = await db
     .prepare("SELECT * FROM tasks WHERE tg_chat_id = ? AND tg_message_id = ?")
     .bind(chatId, repliedTo)
@@ -255,8 +284,9 @@ async function handleMessage(env: Env, db: D1Database, message: TgMessage): Prom
 }
 
 async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpdate["callback_query"]>): Promise<void> {
-  const chatId = query.message ? String(query.message.chat.id) : null;
-  if (!chatId || !query.data) {
+  const source = query.message;
+  const chatId = source ? String(source.chat.id) : null;
+  if (!source || !chatId || !query.data) {
     await answerCallback(env, query.id);
     return;
   }
@@ -281,6 +311,13 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
     return;
   }
 
+  if (parsed.action === "cancel") {
+    await setRejectPrompt(db, task.id, null);
+    await answerCallback(env, query.id, "Rejection cancelled.");
+    await editMessage(env, chatId, source.message_id, "Rejection cancelled — the task is still open.", []);
+    return;
+  }
+
   if (parsed.action === "note") {
     await answerCallback(env, query.id, "Reply to the task message with your note.");
     await sendMessage(env, chatId, `📝 Reply to this with your note for <b>${tgEscape(task.label)}</b>.`, {
@@ -295,9 +332,27 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
     return;
   }
 
-  const outcome = parsed.action === "done" ? "done" : "rejected";
-  await resolveTask(db, task.id, outcome, task.remarks);
-  await answerCallback(env, query.id, outcome === "done" ? "✅ Marked done" : "✖️ Rejected");
+  // Rejecting needs a reason, so the button only asks the question — the
+  // reply to this prompt is what actually resolves the task. Done stays a
+  // single tap; explaining a completed chore is nobody's idea of useful.
+  if (parsed.action === "reject") {
+    await answerCallback(env, query.id, "Tell me why, and I'll reject it.");
+    const prompt = await sendMessage(
+      env,
+      chatId,
+      `✖️ <b>Why are you rejecting this?</b>\n${tgEscape(task.label)}\n\n<i>Reply to this message with the reason.</i>`,
+      {
+        replyToMessageId: task.tg_message_id ?? undefined,
+        buttons: [[{ text: "Cancel", callback_data: callbackData("cancel", task.id) }]],
+      },
+    );
+    if (prompt) await setRejectPrompt(db, task.id, prompt.message_id);
+    return;
+  }
+
+  await resolveTask(db, task.id, "done", task.remarks);
+  await setRejectPrompt(db, task.id, null);
+  await answerCallback(env, query.id, "✅ Marked done");
   await syncTaskMessage(env, db, task.id);
   await broadcast(env, { type: "task_resolved" });
 }

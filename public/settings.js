@@ -20,7 +20,20 @@
     const data = await res.json().catch(function () {
       return {};
     });
-    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    if (!res.ok) {
+      // A 500 with no JSON error body is almost always the schema being
+      // behind the code — surface that instead of a shrug, since it's the
+      // one failure a deploy can cause without any other signal.
+      if (data.error) throw new Error(data.error);
+      if (res.status >= 500) {
+        throw new Error(
+          "The server errored (HTTP " +
+            res.status +
+            "). If Telegram was just deployed, the database migration probably hasn't run yet: npm run db:migrate:remote",
+        );
+      }
+      throw new Error("Request failed (HTTP " + res.status + ").");
+    }
     return data;
   }
 
@@ -35,7 +48,51 @@
 
   // ---- bot status -------------------------------------------------------
 
-  function renderStatus() {
+  function timeAgo(ms) {
+    const mins = Math.floor((Date.now() - ms) / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return mins + "m ago";
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h ago";
+    return Math.floor(hrs / 24) + "d ago";
+  }
+
+  // What Telegram itself reports, not what we last asked for — a webhook
+  // pointing at a stale URL reads as "registered" but delivers nothing.
+  function webhookState() {
+    const w = state.webhook;
+    if (!w) return { tone: "unknown", title: "Webhook status unavailable", detail: "Couldn't reach Telegram." };
+    if (!w.registered) {
+      return {
+        tone: "off",
+        title: "Not registered",
+        detail: "Telegram has nowhere to deliver button taps yet.",
+      };
+    }
+    if (!w.matches) {
+      return {
+        tone: "off",
+        title: "Pointing somewhere else",
+        detail: "Telegram is delivering to " + esc(w.url) + " — re-register to fix.",
+      };
+    }
+    if (w.lastError) {
+      return {
+        tone: "warn",
+        title: "Registered, but Telegram reported an error",
+        detail: esc(w.lastError) + (w.lastErrorAt ? " (" + timeAgo(w.lastErrorAt) + ")" : ""),
+      };
+    }
+    return {
+      tone: "ok",
+      title: "Connected",
+      detail:
+        "Telegram is delivering to this site." +
+        (w.pending > 0 ? " " + w.pending + " update(s) queued." : " Nothing queued."),
+    };
+  }
+
+  function renderStatus(flash) {
     if (!state.configured) {
       statusEl.innerHTML =
         '<p class="tg-warn">⚠️ No bot token yet. Create a bot with <strong>@BotFather</strong> on Telegram, then set the two secrets:</p>' +
@@ -44,30 +101,51 @@
       return;
     }
 
+    const w = webhookState();
+
     statusEl.innerHTML =
       '<div class="tg-bot-row">' +
-      '<div>' +
+      "<div>" +
       '<div class="tg-bot-name">' +
       (state.botUsername ? "@" + esc(state.botUsername) : "Bot connected") +
       "</div>" +
-      '<div class="meta" style="margin:0;">Webhook: ' +
+      '<div class="meta" style="margin:0;">' +
       esc(state.webhookUrl) +
       "</div>" +
       "</div>" +
-      '<button type="button" id="tg-setup-btn" class="secondary">Register webhook</button>' +
+      '<button type="button" id="tg-setup-btn" class="secondary">' +
+      (w.tone === "ok" ? "Re-register" : "Register webhook") +
+      "</button>" +
       "</div>" +
-      '<p class="meta">Run this once after setting the secrets, and again if the site URL ever changes.</p>';
+      '<div class="tg-health tg-health-' +
+      w.tone +
+      '"><span class="tg-health-dot"></span><div><strong>' +
+      w.title +
+      "</strong><div class=\"meta\" style=\"margin:0;\">" +
+      w.detail +
+      "</div></div></div>" +
+      (flash ? '<p class="tg-flash">' + esc(flash) + "</p>" : "");
 
     document.getElementById("tg-setup-btn").addEventListener("click", async function (e) {
       const btn = e.currentTarget;
+      const original = btn.textContent;
       btn.disabled = true;
       btn.setAttribute("aria-busy", "true");
+      btn.textContent = "Registering…";
       try {
-        state = await api("/api/telegram/setup", { method: "POST" });
-        render();
+        const result = await api("/api/telegram/setup", { method: "POST" });
+        state = result;
+        // The status card looks near-identical before and after, so say
+        // explicitly that something happened.
+        render(
+          result.firstRegistration
+            ? "✓ Webhook registered. Telegram will now deliver button taps here."
+            : "✓ Webhook re-registered. Nothing queued was discarded.",
+        );
       } catch (err) {
         btn.disabled = false;
         btn.removeAttribute("aria-busy");
+        btn.textContent = original;
         showError(statusEl, err.message);
       }
     });
@@ -352,8 +430,8 @@
       '<p class="meta">Change these in <code>wrangler.jsonc</code> (NUDGE_HOURS_HIGH, NUDGE_HOURS_MEDIUM, NUDGE_HOURS_LOW, NUDGE_MAX, NUDGE_QUIET_HOURS).</p>';
   }
 
-  function render() {
-    renderStatus();
+  function render(flash) {
+    renderStatus(flash);
     renderPeople();
     renderNudges();
   }
@@ -364,8 +442,14 @@
       render();
     })
     .catch(function (err) {
-      statusEl.innerHTML = '<p class="empty-state">Couldn\'t load settings: ' + esc(err.message) + "</p>";
-      peopleEl.innerHTML = "";
+      statusEl.innerHTML =
+        '<p class="tg-warn">⚠️ Couldn\'t load settings.</p><p class="meta">' +
+        esc(err.message) +
+        '</p><button type="button" id="tg-retry" class="secondary">Try again</button>';
+      peopleEl.innerHTML = '<p class="empty-state">Unavailable until settings load.</p>';
       nudgesEl.innerHTML = "";
+      document.getElementById("tg-retry").addEventListener("click", function () {
+        location.reload();
+      });
     });
 })();

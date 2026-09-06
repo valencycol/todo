@@ -11,7 +11,7 @@ export function taskLinkPage(task: TaskRow): string {
         <h2>${task.label}</h2>
         <p class="meta">Requested ${formatDate(task.created_at)}</p>
         <form id="complete-form">
-          <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
+          <textarea id="remarks" placeholder="Remarks (required if rejecting)"></textarea>
           <div id="form-error" class="error-text" style="display:none;"></div>
           <div class="task-actions">
             <button type="submit" data-outcome="done" class="btn-icon">${raw(checkIcon(16))}<span>Mark complete</span></button>
@@ -26,6 +26,18 @@ export function taskLinkPage(task: TaskRow): string {
         var outcome = (e.submitter && e.submitter.dataset.outcome) || "done";
         var buttons = e.target.querySelectorAll("button");
         var err = document.getElementById("form-error");
+        var remarksEl = document.getElementById("remarks");
+
+        // A rejection without a reason is the one outcome nobody can act
+        // on, so ask for it here rather than letting the server bounce it.
+        if (outcome === "rejected" && !remarksEl.value.trim()) {
+          err.textContent = "Please say why you're rejecting this task.";
+          err.style.display = "block";
+          remarksEl.focus();
+          return;
+        }
+        err.style.display = "none";
+
         buttons.forEach(function (b) {
           b.disabled = true;
           b.setAttribute("aria-busy", "true");
@@ -34,15 +46,20 @@ export function taskLinkPage(task: TaskRow): string {
           var res = await fetch(location.pathname + "/resolve", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ outcome: outcome, remarks: document.getElementById("remarks").value }),
+            body: JSON.stringify({ outcome: outcome, remarks: remarksEl.value }),
           });
-          if (!res.ok) throw new Error("failed");
+          if (!res.ok) {
+            var data = await res.json().catch(function () {
+              return {};
+            });
+            throw new Error(data.error || "failed");
+          }
           document.querySelector(".login-card").innerHTML =
             outcome === "rejected"
               ? '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="confirm-icon rejected" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg><h2>Rejected</h2><p class="meta">Got it — this task has been marked as rejected.</p>'
               : '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="confirm-icon" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5 10.8 15.5 16 9.5"/></svg><h2>Done</h2><p class="meta">Thanks — this task is marked complete.</p>';
         } catch (e2) {
-          err.textContent = "Couldn't save that. Please try again.";
+          err.textContent = e2.message === "failed" ? "Couldn't save that. Please try again." : e2.message;
           err.style.display = "block";
           buttons.forEach(function (b) {
             b.disabled = false;

@@ -26,6 +26,13 @@ taskLinkRoutes.post("/t/:token/resolve", async (c) => {
   const outcome = body.outcome === "rejected" ? "rejected" : "done";
   const remarks = String(body.remarks ?? "").trim().slice(0, 1000) || null;
 
+  // Rejecting is the outcome that needs explaining — "not done, no reason"
+  // is the one result nobody can act on. Enforced here rather than only in
+  // the form, so the Telegram path and any direct POST obey the same rule.
+  if (outcome === "rejected" && !remarks) {
+    return c.json({ error: "Please add a reason when rejecting a task." }, 400);
+  }
+
   await resolveTask(c.env.DB, task.id, outcome, remarks);
   // Keep the Telegram copy honest: a task resolved from the web link must
   // stop offering live buttons in the chat.

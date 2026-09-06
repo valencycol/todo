@@ -12,7 +12,14 @@ import {
   unlinkChat,
   type DeliveryChannel,
 } from "../lib/recipients";
-import { getBotInfo, isTelegramConfigured, sendMessage, setWebhook, tgEscape } from "../lib/telegram";
+import {
+  getBotInfo,
+  getWebhookInfo,
+  isTelegramConfigured,
+  sendMessage,
+  setWebhook,
+  tgEscape,
+} from "../lib/telegram";
 import { getPolicy } from "../lib/escalation";
 
 export const telegramAdminRoutes = new Hono<{ Bindings: Env }>();
@@ -39,6 +46,28 @@ function inviteLink(bot: string | null, code: string | null): string | null {
   return bot && code ? `https://t.me/${bot}?start=${code}` : null;
 }
 
+/**
+ * Telegram's own view of the webhook, reduced to what Settings renders.
+ * `matches` is the important one: a webhook pointing at a stale URL (an
+ * old SITE_URL, or another environment's) looks "registered" but delivers
+ * nothing here.
+ */
+async function webhookHealth(env: Env, expectedUrl: string) {
+  if (!isTelegramConfigured(env)) return null;
+
+  const info = await getWebhookInfo(env);
+  if (!info) return null;
+
+  return {
+    url: info.url || null,
+    registered: Boolean(info.url),
+    matches: info.url === expectedUrl,
+    pending: info.pending_update_count ?? 0,
+    lastError: info.last_error_message ?? null,
+    lastErrorAt: info.last_error_date ? info.last_error_date * 1000 : null,
+  };
+}
+
 async function statusPayload(env: Env, db: D1Database) {
   const bot = await botUsername(env, db);
   const policy = getPolicy(env);
@@ -63,10 +92,13 @@ async function statusPayload(env: Env, db: D1Database) {
     }),
   );
 
+  const webhookUrl = `${env.SITE_URL}/telegram/webhook`;
+
   return {
     configured: isTelegramConfigured(env),
     botUsername: bot,
-    webhookUrl: `${env.SITE_URL}/telegram/webhook`,
+    webhookUrl,
+    webhook: await webhookHealth(env, webhookUrl),
     nudges: { hours: policy.hours, maxNudges: policy.maxNudges, quiet: policy.quiet },
     assignees,
   };
@@ -166,8 +198,19 @@ telegramAdminRoutes.post("/api/telegram/setup", async (c) => {
   await setSetting(c.env.DB, BOT_USERNAME_KEY, info.username);
 
   const url = `${c.env.SITE_URL}/telegram/webhook`;
-  const result = await setWebhook(c.env, url, c.env.TELEGRAM_WEBHOOK_SECRET);
+
+  // Only clear the backlog on a genuine first registration — re-clicking
+  // the button must not discard a button press someone just made.
+  const existing = await getWebhookInfo(c.env);
+  const isFirstRegistration = !existing?.url;
+
+  const result = await setWebhook(c.env, url, c.env.TELEGRAM_WEBHOOK_SECRET, isFirstRegistration);
   if (!result.ok) return c.json({ error: result.error ?? "Webhook registration failed." }, 502);
 
-  return c.json({ ok: true, ...(await statusPayload(c.env, c.env.DB)) });
+  return c.json({
+    ok: true,
+    registered: true,
+    firstRegistration: isFirstRegistration,
+    ...(await statusPayload(c.env, c.env.DB)),
+  });
 });

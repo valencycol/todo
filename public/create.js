@@ -214,7 +214,16 @@
     refreshSendState();
   }
 
-  function showSentConfirmation() {
+  // The server reports which channel actually delivered, which isn't
+  // always the one configured — Telegram falls back to email when someone
+  // isn't linked, and saying "emailed" regardless would be a lie either way.
+  function deliveryWording(channel) {
+    if (channel === "telegram") return "Your list has been sent via Telegram.";
+    if (channel === "both") return "Your list has been sent via Telegram and email.";
+    return "Your list has been sent via email.";
+  }
+
+  function showSentConfirmation(result) {
     AppModal.open({
       title: "List sent",
       onClose: resetFormForNewList,
@@ -228,9 +237,19 @@
 
         const message = document.createElement("p");
         message.className = "meta";
-        message.textContent = "Your list has been emailed.";
+        message.textContent = deliveryWording(result && result.channel);
 
         modal.body.append(icon, message);
+
+        // e.g. "Alvita isn't linked to Telegram yet — sent by email
+        // instead." Worth seeing: it's the difference between the setup
+        // working and quietly not working.
+        if (result && result.problems && result.problems.length) {
+          const note = document.createElement("p");
+          note.className = "meta delivery-note";
+          note.textContent = result.problems.join(" ");
+          modal.body.appendChild(note);
+        }
 
         AppModal.addButton(modal.actionsBar, { label: "Done", onClick: modal.close });
       },
@@ -303,11 +322,12 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ items, assignee: selectedAssignee() }),
               });
-              if (!res.ok) throw new Error("Request failed");
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data.error || "Request failed");
               modal.close();
-              showSentConfirmation();
+              showSentConfirmation(data);
             } catch (err) {
-              modalError.textContent = "Something went wrong sending the list. Please try again.";
+              modalError.textContent = err.message || "Something went wrong sending the list. Please try again.";
               modalError.style.display = "block";
               backBtn.disabled = false;
               confirmBtn.disabled = false;

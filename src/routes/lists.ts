@@ -12,6 +12,7 @@ import {
 import { deliverList, deliveryFailed } from "../lib/notify";
 import { broadcast } from "../lib/hub";
 import { getAssignees, resolveAssignee } from "../lib/assignees";
+import { getRecipients, type DeliveryChannel } from "../lib/recipients";
 
 export const listsRoutes = new Hono<{ Bindings: Env }>();
 
@@ -20,9 +21,26 @@ function stripTaskSecrets(task: TaskRow) {
   return rest;
 }
 
-function serializeList(env: Env, list: ListWithTasks) {
+/**
+ * How a given assignee's lists actually go out right now. Telegram only
+ * counts once they're linked — a configured-but-unlinked person still
+ * falls back to email, and the dashboard's Resend button should say so.
+ */
+type ChannelMap = Map<string, DeliveryChannel>;
+
+async function getChannelMap(db: D1Database): Promise<ChannelMap> {
+  const recipients = await getRecipients(db);
+  return new Map(recipients.map((r) => [r.assignee, r.chat_id ? r.channel : "email"]));
+}
+
+function serializeList(env: Env, list: ListWithTasks, channels: ChannelMap) {
   const assignee = getAssignees(env).find((a) => a.key === list.assignee);
-  return { ...list, assigneeName: assignee?.name ?? list.assignee, tasks: list.tasks.map(stripTaskSecrets) };
+  return {
+    ...list,
+    assigneeName: assignee?.name ?? list.assignee,
+    deliveryChannel: channels.get(list.assignee) ?? "email",
+    tasks: list.tasks.map(stripTaskSecrets),
+  };
 }
 
 listsRoutes.post("/api/lists", async (c) => {
@@ -77,8 +95,8 @@ listsRoutes.post("/api/lists/:id/resend", async (c) => {
 });
 
 listsRoutes.get("/api/lists/active", async (c) => {
-  const active = await getActiveLists(c.env.DB);
-  return c.json({ active: active.map((l) => serializeList(c.env, l)) });
+  const [active, channels] = await Promise.all([getActiveLists(c.env.DB), getChannelMap(c.env.DB)]);
+  return c.json({ active: active.map((l) => serializeList(c.env, l, channels)) });
 });
 
 listsRoutes.get("/api/lists/completed", async (c) => {
@@ -92,5 +110,6 @@ listsRoutes.get("/api/lists/completed", async (c) => {
     offset: Number.isFinite(offset) ? offset : undefined,
   });
 
-  return c.json({ completed: lists.map((l) => serializeList(c.env, l)), hasMore });
+  const channels = await getChannelMap(c.env.DB);
+  return c.json({ completed: lists.map((l) => serializeList(c.env, l, channels)), hasMore });
 });

@@ -38,6 +38,14 @@
     });
   }
 
+  // Mirrors how the list will actually go out, so the button doesn't
+  // promise an email to someone who now receives tasks in Telegram.
+  function resendLabel(channel) {
+    if (channel === "telegram") return "Resend on Telegram";
+    if (channel === "both") return "Resend on both";
+    return "Resend email";
+  }
+
   function statusPill(task) {
     if (task.status === "rejected") return '<span class="status-pill rejected">Rejected</span>';
     if (task.status === "done") return '<span class="status-pill done">Done</span>';
@@ -152,7 +160,9 @@
       "</span>" +
       '<button type="button" class="secondary resend-btn" data-list-id="' +
       esc(list.id) +
-      '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14.5 4.5M20 20v-5h-5"/></svg><span>Resend email</span></button>' +
+      '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14.5 4.5M20 20v-5h-5"/></svg><span>' +
+      esc(resendLabel(list.deliveryChannel)) +
+      "</span></button>" +
       "</div>" +
       rows +
       "</div>"

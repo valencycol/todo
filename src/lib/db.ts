@@ -19,6 +19,8 @@ export interface TaskRow {
   tg_message_id: number | null;
   nudge_count: number;
   nudge_last_at: number | null;
+  // Set while a Telegram rejection is waiting on its reason; NULL otherwise.
+  tg_reject_prompt_id: number | null;
 }
 
 export interface ListRow {
@@ -78,6 +80,7 @@ export async function createListWithTasks(
     tg_message_id: null,
     nudge_count: 0,
     nudge_last_at: null,
+    tg_reject_prompt_id: null,
   }));
 
   for (const task of tasks) {
@@ -481,4 +484,24 @@ export async function getOpenTasksForChat(db: D1Database, chatId: string): Promi
     .bind(chatId)
     .all<TaskRow>();
   return results;
+}
+
+/**
+ * Marks a task as awaiting its rejection reason, storing the id of the
+ * prompt message so the reply can be matched back. Pass null to clear.
+ */
+export async function setRejectPrompt(db: D1Database, taskId: string, messageId: number | null): Promise<void> {
+  await db.prepare("UPDATE tasks SET tg_reject_prompt_id = ? WHERE id = ?").bind(messageId, taskId).run();
+}
+
+export async function getTaskByRejectPrompt(
+  db: D1Database,
+  chatId: string,
+  messageId: number,
+): Promise<TaskRow | null> {
+  const row = await db
+    .prepare("SELECT * FROM tasks WHERE tg_chat_id = ? AND tg_reject_prompt_id = ?")
+    .bind(chatId, messageId)
+    .first<TaskRow>();
+  return row ?? null;
 }
