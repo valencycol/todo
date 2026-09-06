@@ -346,7 +346,7 @@ async function handleCallback(env: Env, db: D1Database, query: NonNullable<TgUpd
     const prompt = await sendMessage(
       env,
       chatId,
-      `✖️ <b>Why are you rejecting this?</b>\n${tgEscape(task.label)}\n\n<i>Reply to this message with the reason.</i>`,
+      `✖️ <b>Why are you rejecting this?</b>\n${tgEscape(task.label)}\n\n<i>Long-press this message and tap Reply to send the reason — don’t send it as a normal chat message.</i>`,
       {
         replyToMessageId: task.tg_message_id ?? undefined,
         buttons: [[{ text: "✖️ Cancel rejection", callback_data: callbackData("cancel", task.id) }]],
